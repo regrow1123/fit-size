@@ -1,4 +1,4 @@
-import type { AvatarDimensions, ClothingDimensions } from '../types';
+import type { AvatarDimensions, ClothingDimensions, PointMeasurement } from '../types';
 import { cmToPx } from './avatarCalculator';
 
 /**
@@ -82,6 +82,39 @@ export function drawClothing(
 
   // 피팅 판정 표시
   drawFitIndicators(ctx, avatarDims, clothingDims, cx, shoulderY);
+}
+
+/**
+ * PointMeasurement[] → Map<string, number> 변환
+ * 포인트 쌍을 기존 키(shoulderWidth, totalLength 등)에 매핑
+ */
+export function pointMeasurementsToMap(measurements: PointMeasurement[]): Map<string, number> {
+  const map = new Map<string, number>();
+
+  // Mapping rules: point pair → key
+  const rules: { starts: string[]; ends: string[]; key: string; transform?: (v: number) => number }[] = [
+    { starts: ['shoulder_end_left'], ends: ['shoulder_end_right'], key: 'shoulderWidth' },
+    { starts: ['neck_back_center', 'below_back_neck'], ends: ['hem_center', 'hem_left', 'hem_right'], key: 'totalLength' },
+    { starts: ['shoulder_end_left', 'shoulder_end_right', 'shoulder_seam_left', 'shoulder_seam_right'], ends: ['sleeve_end_left', 'sleeve_end_right'], key: 'sleeveLength' },
+    { starts: ['chest_left'], ends: ['chest_right'], key: 'chestCirc', transform: v => v * Math.PI },
+    { starts: ['waist_left'], ends: ['waist_right'], key: 'waistCirc', transform: v => v * Math.PI },
+    { starts: ['hem_left'], ends: ['hem_right'], key: 'hemCirc', transform: v => v * Math.PI },
+    // Sleeve width from armpit to sleeve end (approximate)
+    { starts: ['armpit_left', 'armpit_right'], ends: ['sleeve_end_left', 'sleeve_end_right'], key: 'sleeveCirc', transform: v => v * Math.PI },
+  ];
+
+  for (const m of measurements) {
+    for (const rule of rules) {
+      const matchForward = (rule.starts.includes(m.startPointId) && rule.ends.includes(m.endPointId));
+      const matchReverse = (rule.starts.includes(m.endPointId) && rule.ends.includes(m.startPointId));
+      if (matchForward || matchReverse) {
+        const val = rule.transform ? rule.transform(m.value) : m.value;
+        map.set(rule.key, val);
+      }
+    }
+  }
+
+  return map;
 }
 
 /**

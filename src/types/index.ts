@@ -17,6 +17,14 @@ export interface MeasurementPoint {
   value: number;        // cm
 }
 
+// 포인트 기반 측정 (sketch UI에서 생성)
+export interface PointMeasurement {
+  id: string;
+  startPointId: string;
+  endPointId: string;
+  value: number;        // cm
+}
+
 // 옷 실측치
 export interface ClothingMeasurements {
   category: 'top';      // MVP: 상의만
