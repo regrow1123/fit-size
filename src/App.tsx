@@ -1,23 +1,29 @@
 import { useState } from 'react';
-import type { BodyMeasurements } from './types';
+import type { BodyMeasurements, ClothingCategory } from './types';
 import BodyInputForm from './components/BodyInputForm';
 import ClothingInputForm from './components/ClothingInputForm';
 import FittingCanvas from './components/FittingCanvas';
 
 type Step = 'body' | 'clothing' | 'result';
 
+const CATEGORY_ICONS: Record<ClothingCategory, string> = {
+  tshirt: '👕', long_sleeve: '🧥', jacket: '🧥', pants: '👖', dress: '👗',
+};
+
 export default function App() {
   const [step, setStep] = useState<Step>('body');
   const [body, setBody] = useState<BodyMeasurements | null>(null);
   const [clothing, setClothing] = useState<Map<string, number> | null>(null);
+  const [category, setCategory] = useState<ClothingCategory>('tshirt');
 
   const handleBodySubmit = (b: BodyMeasurements) => {
     setBody(b);
     setStep('clothing');
   };
 
-  const handleClothingSubmit = (m: Map<string, number>) => {
+  const handleClothingSubmit = (m: Map<string, number>, cat: ClothingCategory) => {
     setClothing(m);
+    setCategory(cat);
     setStep('result');
   };
 
@@ -31,21 +37,18 @@ export default function App() {
     <div className="min-h-screen bg-gray-100">
       <header className="bg-blue-600 text-white py-4 shadow">
         <div className="max-w-4xl mx-auto px-4">
-          <h1 className="text-2xl font-bold">👕 FitSize</h1>
+          <h1 className="text-2xl font-bold">{CATEGORY_ICONS[category]} FitSize</h1>
           <p className="text-blue-100 text-sm">온라인 쇼핑 옷 사이즈, 입어보고 결정하세요</p>
         </div>
       </header>
 
       <main className="max-w-4xl mx-auto px-4 py-8">
-        {/* 스텝 인디케이터 */}
         <div className="flex gap-2 mb-8 text-sm">
           {(['body', 'clothing', 'result'] as Step[]).map((s, i) => (
             <div
               key={s}
               className={`flex-1 text-center py-2 rounded ${
-                step === s
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-200 text-gray-500'
+                step === s ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-500'
               }`}
             >
               {i + 1}. {s === 'body' ? '신체 정보' : s === 'clothing' ? '옷 실측치' : '피팅 결과'}
@@ -54,7 +57,6 @@ export default function App() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          {/* 왼쪽: 입력 폼 */}
           <div className="bg-white rounded-lg shadow p-6">
             {step === 'body' && (
               <BodyInputForm onSubmit={handleBodySubmit} initial={body ?? undefined} />
@@ -100,12 +102,12 @@ export default function App() {
             )}
           </div>
 
-          {/* 오른쪽: 캔버스 (body가 있을 때만) */}
           <div className="flex justify-center">
             {body ? (
               <FittingCanvas
                 body={body}
                 clothingMeasurements={step === 'result' ? clothing ?? undefined : undefined}
+                category={category}
               />
             ) : (
               <div className="w-[400px] h-[700px] border rounded-lg bg-white flex items-center justify-center text-gray-400">

@@ -1,5 +1,5 @@
 import { useRef, useEffect } from 'react';
-import type { BodyMeasurements, AvatarDimensions, ClothingDimensions } from '../types';
+import type { BodyMeasurements, AvatarDimensions, ClothingCategory, ClothingDimensions } from '../types';
 import { calculateAvatarDimensions } from '../utils/avatarCalculator';
 import { drawAvatar } from '../utils/avatarRenderer';
 import { calculateClothingDimensions, drawClothing } from '../utils/clothingRenderer';
@@ -7,34 +7,33 @@ import { calculateClothingDimensions, drawClothing } from '../utils/clothingRend
 interface Props {
   body: BodyMeasurements;
   clothingMeasurements?: Map<string, number>;
+  category?: ClothingCategory;
 }
 
 const CANVAS_WIDTH = 400;
 const CANVAS_HEIGHT = 700;
 
-export default function FittingCanvas({ body, clothingMeasurements }: Props) {
+export default function FittingCanvas({ body, clothingMeasurements, category = 'tshirt' }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // 아바타 치수 계산 및 렌더링
     const avatarDims: AvatarDimensions = calculateAvatarDimensions(body);
     drawAvatar(ctx, avatarDims, CANVAS_WIDTH, CANVAS_HEIGHT);
 
-    // 옷 실측치가 있으면 오버레이
     if (clothingMeasurements) {
       const clothingDims: ClothingDimensions = calculateClothingDimensions(
         clothingMeasurements,
         body.height,
+        category,
       );
       drawClothing(ctx, avatarDims, clothingDims, CANVAS_WIDTH);
     }
-  }, [body, clothingMeasurements]);
+  }, [body, clothingMeasurements, category]);
 
   return (
     <div className="flex flex-col items-center">

@@ -1,3 +1,6 @@
+// 의류 카테고리
+export type ClothingCategory = 'tshirt' | 'long_sleeve' | 'jacket' | 'pants' | 'dress';
+
 // 신체 측정값
 export interface BodyMeasurements {
   gender: 'male' | 'female';
@@ -12,8 +15,8 @@ export interface BodyMeasurements {
 export interface MeasurementPoint {
   id: string;
   label: string;
-  startPoint: string;   // 시작점 설명 (예: "왼쪽 어깨 끝")
-  endPoint: string;     // 끝점 설명 (예: "오른쪽 어깨 끝")
+  startPoint: string;
+  endPoint: string;
   value: number;        // cm
 }
 
@@ -27,15 +30,13 @@ export interface PointMeasurement {
 
 // 옷 실측치
 export interface ClothingMeasurements {
-  category: 'top';      // MVP: 상의만
+  category: ClothingCategory;
   measurements: MeasurementPoint[];
 }
 
 // 아바타 렌더링에 필요한 계산된 치수 (px 단위)
 export interface AvatarDimensions {
-  // 전체
   totalHeight: number;
-  // 상체
   headRadius: number;
   neckWidth: number;
   neckHeight: number;
@@ -47,7 +48,6 @@ export interface AvatarDimensions {
   torsoHeight: number;
   armLength: number;
   armWidth: number;
-  // 하체
   hipWidth: number;
   legLength: number;
   legWidth: number;
@@ -55,10 +55,21 @@ export interface AvatarDimensions {
 
 // 옷 렌더링 치수 (px 단위)
 export interface ClothingDimensions {
+  category: ClothingCategory;
   shoulderWidth: number;
   chestWidth: number;
   totalLength: number;
   sleeveLength: number;
   sleeveWidth: number;
   hemWidth: number;
+  // Pants-specific
+  waistWidth?: number;
+  hipWidth?: number;
+  thighWidth?: number;
+  kneeWidth?: number;
+  inseam?: number;
+  rise?: number;
+  // Long sleeve / jacket extras
+  elbowWidth?: number;
+  cuffWidth?: number;
 }
