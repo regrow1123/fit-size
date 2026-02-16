@@ -1,0 +1,1 @@
+# FitSize\n\n온라인 쇼핑 옷 사이즈 결정을 도와주는 웹 서비스\n\n## 기능\n- 신체 정보(키/몸무게/어깨너비) 입력 → 2D 아바타 생성\n- 옷 실측치(총장/어깨/가슴둘레/소매 등) 입력\n- 아바타에 옷을 입혀 피팅 상태 시각화 (적당/여유/빡빡)\n\n## 기술 스택\n- React + TypeScript\n- Vite\n- Tailwind CSS\n- HTML Canvas 2D\n\n## 실행\n```bash\nnpm install\nnpm run dev\n```
