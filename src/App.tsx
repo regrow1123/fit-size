@@ -4,6 +4,7 @@ import BodyInputForm from './components/BodyInputForm';
 import ClothingInputForm from './components/ClothingInputForm';
 import FittingCanvas from './components/FittingCanvas';
 import ReverseInputForm from './components/ReverseInputForm';
+import ProductRecommendations from './components/ProductRecommendations';
 import { hasStoredProfile, loadWardrobe } from './utils/storage';
 import { estimateBodyFromGarments, estimatesToBodyMeasurements } from './utils/reverseEstimator';
 
@@ -230,6 +231,10 @@ export default function App() {
               )}
             </div>
           </div>
+        )}
+
+        {step === 'result' && (
+          <ProductRecommendations category={category} />
         )}
       </main>
     </div>
