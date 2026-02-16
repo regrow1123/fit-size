@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import ClothingSketch from './ClothingSketch';
 import type { ClothingCategory, PointMeasurement, BodyMeasurements } from '../types';
 import { CLOTHING_CATEGORIES } from '../data/anchorPoints';
@@ -9,6 +9,14 @@ import {
   estimateBodyFromGarments,
   estimatesToBodyMeasurements,
 } from '../utils/reverseEstimator';
+import {
+  loadWardrobe,
+  saveGarment as persistGarment,
+  updateGarmentName,
+  deleteGarment as removeGarmentFromStorage,
+  clearAllGarments,
+  saveProfile,
+} from '../utils/storage';
 
 interface Props {
   onSubmit: (body: BodyMeasurements) => void;
@@ -22,11 +30,15 @@ const FEEDBACK_OPTIONS: { value: FitFeedback; label: string; emoji: string; colo
   { value: '매우 넉넉', label: '매우 넉넉', emoji: '🥳', color: 'text-blue-700', bg: 'bg-blue-100 border-blue-300 hover:bg-blue-200' },
 ];
 
-let garmentIdCounter = 1;
+const CATEGORY_ICONS: Record<ClothingCategory, string> = {
+  tshirt: '👕', long_sleeve: '🧥', jacket: '🧥', pants: '👖', dress: '👗',
+};
+
+let garmentIdCounter = Date.now();
 let measurementIdCounter = 1;
 
 export default function ReverseInputForm({ onSubmit }: Props) {
-  const [garments, setGarments] = useState<ReverseGarment[]>([]);
+  const [garments, setGarments] = useState<(ReverseGarment & { name?: string; fromStorage?: boolean })[]>([]);
   const [category, setCategory] = useState<ClothingCategory>('tshirt');
   const [sketchMeasurements, setSketchMeasurements] = useState<PointMeasurement[]>([]);
   const [currentReverseMeasurements, setCurrentReverseMeasurements] = useState<ReverseMeasurement[]>([]);
@@ -35,9 +47,31 @@ export default function ReverseInputForm({ onSubmit }: Props) {
   const [height, setHeight] = useState(175);
   const [weight, setWeight] = useState(70);
   const [isAddingGarment, setIsAddingGarment] = useState(true);
+  const [garmentName, setGarmentName] = useState('');
+  const [editingNameId, setEditingNameId] = useState<string | null>(null);
+  const [editingNameValue, setEditingNameValue] = useState('');
+
+  // Load from localStorage on mount
+  useEffect(() => {
+    const data = loadWardrobe();
+    if (data.garments.length > 0) {
+      setGarments(data.garments.map(g => ({
+        id: g.id,
+        category: g.category,
+        measurements: g.measurements,
+        name: g.name,
+        fromStorage: true,
+      })));
+      setIsAddingGarment(false);
+    }
+    if (data.profile) {
+      setGender(data.profile.gender);
+      setHeight(data.profile.height);
+      setWeight(data.profile.weight);
+    }
+  }, []);
 
   const allGarments = useMemo(() => {
-    // Include current in-progress garment for live estimation
     if (currentReverseMeasurements.length > 0) {
       return [...garments, { id: 'current', category, measurements: currentReverseMeasurements }];
     }
@@ -49,12 +83,11 @@ export default function ReverseInputForm({ onSubmit }: Props) {
   const handleAddMeasurement = useCallback((startId: string, endId: string, value: number) => {
     const id = `m${measurementIdCounter++}`;
     setSketchMeasurements(prev => [...prev, { id, startPointId: startId, endPointId: endId, value }]);
-    // Add to reverse measurements without feedback yet
     setCurrentReverseMeasurements(prev => [
       ...prev,
       { startPointId: startId, endPointId: endId, value, feedback: '적당' },
     ]);
-    setPendingFeedbackIdx(currentReverseMeasurements.length); // index of the just-added one
+    setPendingFeedbackIdx(currentReverseMeasurements.length);
   }, [currentReverseMeasurements.length]);
 
   const handleDeleteMeasurement = useCallback((id: string) => {
@@ -81,14 +114,25 @@ export default function ReverseInputForm({ onSubmit }: Props) {
 
   const handleSaveGarment = () => {
     if (currentReverseMeasurements.length === 0) return;
-    setGarments(prev => [...prev, {
-      id: `g${garmentIdCounter++}`,
+    const id = `g${garmentIdCounter++}`;
+    const name = garmentName.trim() || `${CATEGORY_ICONS[category]} 옷 ${garments.length + 1}`;
+    const newGarment = { id, category, measurements: currentReverseMeasurements, name, fromStorage: false };
+    setGarments(prev => [...prev, newGarment]);
+
+    // Persist to localStorage
+    persistGarment({
+      id,
+      name,
       category,
       measurements: currentReverseMeasurements,
-    }]);
+      savedAt: Date.now(),
+    });
+    saveProfile({ gender, height, weight, updatedAt: Date.now() });
+
     setCurrentReverseMeasurements([]);
     setSketchMeasurements([]);
     setPendingFeedbackIdx(null);
+    setGarmentName('');
     setIsAddingGarment(false);
   };
 
@@ -97,20 +141,46 @@ export default function ReverseInputForm({ onSubmit }: Props) {
     setCurrentReverseMeasurements([]);
     setSketchMeasurements([]);
     setPendingFeedbackIdx(null);
+    setGarmentName('');
   };
 
   const handleRemoveGarment = (id: string) => {
     setGarments(prev => prev.filter(g => g.id !== id));
+    removeGarmentFromStorage(id);
+  };
+
+  const handleClearAll = () => {
+    setGarments([]);
+    clearAllGarments();
+    setIsAddingGarment(true);
+  };
+
+  const handleEditName = (id: string, currentName: string) => {
+    setEditingNameId(id);
+    setEditingNameValue(currentName);
+  };
+
+  const handleSaveName = () => {
+    if (!editingNameId) return;
+    const newName = editingNameValue.trim();
+    if (newName) {
+      setGarments(prev => prev.map(g => g.id === editingNameId ? { ...g, name: newName } : g));
+      updateGarmentName(editingNameId, newName);
+    }
+    setEditingNameId(null);
   };
 
   const handleSubmit = () => {
-    // Save current garment if any
     let finalGarments = garments;
     if (currentReverseMeasurements.length > 0) {
       finalGarments = [...garments, { id: `g${garmentIdCounter++}`, category, measurements: currentReverseMeasurements }];
     }
     const est = estimateBodyFromGarments(finalGarments);
     const body = estimatesToBodyMeasurements(est, gender, height, weight);
+
+    // Save profile with body measurements
+    saveProfile({ gender, height, weight, bodyMeasurements: body, updatedAt: Date.now() });
+
     onSubmit(body);
   };
 
@@ -150,13 +220,41 @@ export default function ReverseInputForm({ onSubmit }: Props) {
       {/* Saved garments */}
       {garments.length > 0 && (
         <div className="space-y-2">
-          <h3 className="text-sm font-bold text-gray-700">📦 입력한 옷 ({garments.length}벌)</h3>
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-bold text-gray-700">📦 내 옷장 ({garments.length}벌)</h3>
+            <button
+              onClick={handleClearAll}
+              className="text-xs text-red-400 hover:text-red-600 cursor-pointer"
+            >
+              🗑 전체 삭제
+            </button>
+          </div>
           {garments.map(g => {
             const gc = CLOTHING_CATEGORIES.find(c => c.id === g.category)!;
+            const isEditing = editingNameId === g.id;
             return (
-              <div key={g.id} className="flex items-center justify-between bg-white border rounded px-3 py-2 text-sm">
-                <span>{gc.icon} {gc.label} — {g.measurements.length}개 측정</span>
-                <button onClick={() => handleRemoveGarment(g.id)} className="text-red-400 hover:text-red-600 cursor-pointer text-xs">✕ 삭제</button>
+              <div key={g.id} className={`flex items-center gap-2 border rounded px-3 py-2 text-sm ${g.fromStorage ? 'bg-blue-50 border-blue-200' : 'bg-white'}`}>
+                {g.fromStorage && <span className="text-xs text-blue-400" title="저장됨">💾</span>}
+                <span className="text-lg">{gc.icon}</span>
+                {isEditing ? (
+                  <input
+                    autoFocus
+                    value={editingNameValue}
+                    onChange={e => setEditingNameValue(e.target.value)}
+                    onBlur={handleSaveName}
+                    onKeyDown={e => e.key === 'Enter' && handleSaveName()}
+                    className="flex-1 border rounded px-1 py-0.5 text-sm"
+                  />
+                ) : (
+                  <span
+                    className="flex-1 cursor-pointer hover:text-blue-600"
+                    onClick={() => handleEditName(g.id, g.name || '')}
+                    title="클릭하여 이름 수정"
+                  >
+                    {g.name || `${gc.label}`} <span className="text-gray-400 text-xs">({g.measurements.length}개 측정)</span>
+                  </span>
+                )}
+                <button onClick={() => handleRemoveGarment(g.id)} className="text-red-400 hover:text-red-600 cursor-pointer text-xs">✕</button>
               </div>
             );
           })}
@@ -169,6 +267,18 @@ export default function ReverseInputForm({ onSubmit }: Props) {
           <h3 className="text-sm font-bold text-gray-700">
             {garments.length === 0 ? '첫 번째 옷 입력' : '새 옷 추가'}
           </h3>
+
+          {/* Garment name input */}
+          <div>
+            <label className="block text-xs text-gray-500 mb-1">옷 이름 (선택)</label>
+            <input
+              type="text"
+              value={garmentName}
+              onChange={e => setGarmentName(e.target.value)}
+              placeholder="예: 무신사 흰 티셔츠 L"
+              className="w-full border rounded px-2 py-1.5 text-sm"
+            />
+          </div>
 
           {/* Category selector */}
           <div className="flex flex-wrap gap-1.5">

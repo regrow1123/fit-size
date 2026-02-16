@@ -1,9 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { BodyMeasurements, ClothingCategory } from './types';
 import BodyInputForm from './components/BodyInputForm';
 import ClothingInputForm from './components/ClothingInputForm';
 import FittingCanvas from './components/FittingCanvas';
 import ReverseInputForm from './components/ReverseInputForm';
+import { hasStoredProfile, loadWardrobe } from './utils/storage';
+import { estimateBodyFromGarments, estimatesToBodyMeasurements } from './utils/reverseEstimator';
 
 type Mode = 'direct' | 'reverse';
 type Step = 'mode' | 'body' | 'clothing' | 'result';
@@ -18,10 +20,41 @@ export default function App() {
   const [body, setBody] = useState<BodyMeasurements | null>(null);
   const [clothing, setClothing] = useState<Map<string, number> | null>(null);
   const [category, setCategory] = useState<ClothingCategory>('tshirt');
+  const [showWelcomeBack, setShowWelcomeBack] = useState(false);
+
+  useEffect(() => {
+    if (hasStoredProfile()) {
+      setShowWelcomeBack(true);
+    }
+  }, []);
+
+  const handleDismissWelcome = () => {
+    setShowWelcomeBack(false);
+  };
+
+  const handleLoadProfileDirect = () => {
+    const data = loadWardrobe();
+    if (data.profile?.bodyMeasurements) {
+      setBody(data.profile.bodyMeasurements);
+      setMode('reverse');
+      setStep('clothing');
+    } else if (data.garments.length > 0 && data.profile) {
+      const garments = data.garments.map(g => ({ id: g.id, category: g.category, measurements: g.measurements }));
+      const estimates = estimateBodyFromGarments(garments);
+      const bodyM = estimatesToBodyMeasurements(estimates, data.profile.gender, data.profile.height, data.profile.weight);
+      setBody(bodyM);
+      setMode('reverse');
+      setStep('clothing');
+    } else {
+      setMode('reverse');
+      setStep('body');
+    }
+    setShowWelcomeBack(false);
+  };
 
   const handleModeSelect = (m: Mode) => {
     setMode(m);
-    setStep(m === 'direct' ? 'body' : 'body'); // 'body' step shows either BodyInputForm or ReverseInputForm
+    setStep('body');
   };
 
   const handleBodySubmit = (b: BodyMeasurements) => {
@@ -56,7 +89,35 @@ export default function App() {
       </header>
 
       <main className="max-w-4xl mx-auto px-4 py-8">
-        {/* Step indicator (hidden on mode select) */}
+        {/* Welcome back banner */}
+        {showWelcomeBack && step === 'mode' && (
+          <div className="mb-6 bg-gradient-to-r from-green-50 to-blue-50 border border-green-300 rounded-xl p-5 shadow-sm">
+            <h2 className="text-lg font-bold text-green-800 mb-1">👋 다시 오셨네요!</h2>
+            <p className="text-sm text-green-700 mb-3">저장된 프로필이 있습니다. 바로 새 옷 피팅을 시작할 수 있어요.</p>
+            <div className="flex gap-2">
+              <button
+                onClick={handleLoadProfileDirect}
+                className="bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-green-700 cursor-pointer transition"
+              >
+                ✅ 저장된 프로필로 시작
+              </button>
+              <button
+                onClick={() => { setMode('reverse'); setStep('body'); setShowWelcomeBack(false); }}
+                className="border border-green-400 text-green-700 px-4 py-2 rounded-lg text-sm hover:bg-green-50 cursor-pointer transition"
+              >
+                📦 옷장 수정하기
+              </button>
+              <button
+                onClick={handleDismissWelcome}
+                className="text-gray-500 px-3 py-2 text-sm hover:text-gray-700 cursor-pointer"
+              >
+                처음부터
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Step indicator */}
         {step !== 'mode' && (
           <div className="flex gap-2 mb-8 text-sm">
             {(['body', 'clothing', 'result'] as Step[]).map((s, i) => (
