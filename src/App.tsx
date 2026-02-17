@@ -192,7 +192,7 @@ export default function App() {
                     alt=""
                     className="w-6 h-6 rounded-full border border-white/50"
                   />
-                  <span className="hidden sm:inline">{t('auth.logout')}</span>
+                  {t('auth.logout')}
                 </button>
               ) : (
                 <button
