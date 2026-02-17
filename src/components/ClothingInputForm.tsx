@@ -5,6 +5,7 @@ import { CLOTHING_CATEGORIES } from '../data/anchorPoints';
 import { pointMeasurementsToMap } from '../utils/clothingRenderer';
 import { estimateBodyDimensions } from '../data/bodyStats';
 import { useTranslation } from '../i18n';
+import { parseSizeChart, type ParsedSizeChart } from '../utils/sizeChartParser';
 
 interface Props {
   onSubmit: (measurements: Map<string, number>, category: ClothingCategory) => void;
@@ -100,6 +101,12 @@ export default function ClothingInputForm({ onSubmit, body }: Props) {
   const { t } = useTranslation();
   const [category, setCategory] = useState<ClothingCategory>('tshirt');
   const [measurements, setMeasurements] = useState<PointMeasurement[]>([]);
+  const [showPaste, setShowPaste] = useState(false);
+  const [pasteText, setPasteText] = useState('');
+  const [parsedChart, setParsedChart] = useState<ParsedSizeChart | null>(null);
+  const [parseError, setParseError] = useState(false);
+  const [appliedSize, setAppliedSize] = useState<string | null>(null);
+  const [chartOverrides, setChartOverrides] = useState<Map<string, number>>(new Map());
 
   const handleAdd = useCallback((startId: string, endId: string, value: number) => {
     setMeasurements(prev => [
@@ -115,17 +122,53 @@ export default function ClothingInputForm({ onSubmit, body }: Props) {
   const handleCategoryChange = (cat: ClothingCategory) => {
     setCategory(cat);
     setMeasurements([]);
+    setChartOverrides(new Map());
+    setAppliedSize(null);
+    setParsedChart(null);
+    setPasteText('');
+    setParseError(false);
+  };
+
+  const handlePasteChange = (text: string) => {
+    setPasteText(text);
+    setParseError(false);
+    setAppliedSize(null);
+    if (text.trim().length > 10) {
+      const chart = parseSizeChart(text);
+      if (chart) {
+        setParsedChart(chart);
+        setParseError(false);
+      } else {
+        setParsedChart(null);
+        setParseError(true);
+      }
+    } else {
+      setParsedChart(null);
+    }
+  };
+
+  const handleSelectSize = (sizeLabel: string) => {
+    if (!parsedChart) return;
+    const row = parsedChart.rows.find(r => r.sizeLabel === sizeLabel);
+    if (!row) return;
+    setChartOverrides(new Map(Object.entries(row.measurements)));
+    setAppliedSize(sizeLabel);
   };
 
   const userMap = useMemo(() => pointMeasurementsToMap(measurements, category), [measurements, category]);
   const defaults = useMemo(() => generateBodyDefaults(body, category), [body, category]);
   const finalMap = useMemo(() => {
     const merged = new Map(defaults);
+    // 사이즈표 값 적용 (체형 기본값 위에)
+    for (const [k, v] of chartOverrides) {
+      merged.set(k, v);
+    }
+    // 스케치 입력값이 최우선
     for (const [k, v] of userMap) {
       merged.set(k, v);
     }
     return merged;
-  }, [defaults, userMap]);
+  }, [defaults, chartOverrides, userMap]);
 
   const handleSubmit = () => {
     onSubmit(finalMap, category);
@@ -155,6 +198,58 @@ export default function ClothingInputForm({ onSubmit, body }: Props) {
         ))}
       </div>
 
+      {/* Size chart paste */}
+      <div>
+        <button
+          onClick={() => setShowPaste(!showPaste)}
+          className="flex items-center justify-between w-full text-sm font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded-lg px-3 py-2 hover:bg-blue-100 cursor-pointer transition"
+        >
+          <span>{t('clothing.paste')}</span>
+          <span className="text-blue-400">{showPaste ? '▲' : '▼'}</span>
+        </button>
+        {showPaste && (
+          <div className="mt-2 space-y-2">
+            <p className="text-xs text-gray-400">{t('clothing.pasteDesc')}</p>
+            <textarea
+              value={pasteText}
+              onChange={e => handlePasteChange(e.target.value)}
+              placeholder={t('clothing.pastePlaceholder')}
+              className="w-full border rounded-lg px-3 py-2 text-xs font-mono h-28 resize-none focus:ring-2 focus:ring-blue-300 focus:border-blue-300"
+            />
+            {parseError && (
+              <p className="text-xs text-red-500">{t('clothing.parseFailed')}</p>
+            )}
+            {parsedChart && (
+              <div className="space-y-2">
+                <p className="text-xs text-green-600">
+                  {t('clothing.mappedCount', { count: parsedChart.mappedKeys.filter(k => k !== null).length })}
+                </p>
+                <div className="flex flex-wrap gap-1.5">
+                  {parsedChart.rows.map(row => (
+                    <button
+                      key={row.sizeLabel}
+                      onClick={() => handleSelectSize(row.sizeLabel)}
+                      className={`px-3 py-1.5 rounded-full text-sm border cursor-pointer transition ${
+                        appliedSize === row.sizeLabel
+                          ? 'bg-green-600 text-white border-green-600 shadow'
+                          : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'
+                      }`}
+                    >
+                      {row.sizeLabel}
+                    </button>
+                  ))}
+                </div>
+                {appliedSize && (
+                  <p className="text-xs text-green-600 font-medium">
+                    {t('clothing.applied', { size: appliedSize })}
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
       <p className="text-sm text-gray-500">{t('clothing.sketchGuide')}</p>
 
       <ClothingSketch
@@ -179,11 +274,12 @@ export default function ClothingInputForm({ onSubmit, body }: Props) {
               const label = labelKey ? t(labelKey) : key;
               const clothVal = finalMap.get(key);
               const userEntered = userMap.has(key);
+              const fromChart = !userEntered && chartOverrides.has(key);
 
               return (
                 <tr key={key} className="border-t border-gray-100">
                   <td className="px-3 py-2 text-gray-700">{label}</td>
-                  <td className={`px-3 py-2 text-right font-mono font-semibold ${userEntered ? 'text-blue-600' : 'text-gray-400'}`}>
+                  <td className={`px-3 py-2 text-right font-mono font-semibold ${userEntered ? 'text-blue-600' : fromChart ? 'text-green-600' : 'text-gray-400'}`}>
                     {clothVal != null ? clothVal.toFixed(0) : '—'}
                   </td>
                 </tr>

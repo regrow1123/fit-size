@@ -89,6 +89,14 @@ const en: TranslationDict = {
   'clothing.tableHeader.part': 'Part',
   'clothing.tableHeader.size': 'Size (cm)',
   'clothing.submit': 'Check fitting',
+  'clothing.paste': '📋 Paste size chart',
+  'clothing.pasteDesc': 'Drag & copy a size chart from a shopping mall, then paste here',
+  'clothing.pastePlaceholder': 'Paste size chart here...\n\ne.g.:\nSize\tLength\tShoulder\tChest\tSleeve\nS\t65\t43\t50\t58\nM\t67\t45\t52\t60',
+  'clothing.parseFailed': 'Could not parse the size chart. Try drag-selecting the table and copying.',
+  'clothing.selectSize': 'Select your size',
+  'clothing.applied': '✅ Size {{size}} applied',
+  'clothing.pasteClose': 'Close',
+  'clothing.mappedCount': '{{count}} fields recognized',
 
   // Measurement labels
   'measure.shoulderWidth': 'Shoulder width',

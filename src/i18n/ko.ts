@@ -89,6 +89,14 @@ const ko: TranslationDict = {
   'clothing.tableHeader.part': '부위',
   'clothing.tableHeader.size': '치수 (cm)',
   'clothing.submit': '피팅 확인',
+  'clothing.paste': '📋 사이즈표 붙여넣기',
+  'clothing.pasteDesc': '쇼핑몰에서 사이즈표를 드래그 → 복사 → 여기에 붙여넣기',
+  'clothing.pastePlaceholder': '사이즈표를 여기에 붙여넣으세요...\n\n예:\n사이즈\t총장\t어깨너비\t가슴단면\t소매길이\nS\t65\t43\t50\t58\nM\t67\t45\t52\t60',
+  'clothing.parseFailed': '사이즈표를 인식할 수 없습니다. 표를 드래그해서 복사해 주세요.',
+  'clothing.selectSize': '내 사이즈 선택',
+  'clothing.applied': '✅ {{size}} 사이즈 적용됨',
+  'clothing.pasteClose': '닫기',
+  'clothing.mappedCount': '{{count}}개 항목 인식',
 
   // Measurement labels
   'measure.shoulderWidth': '어깨너비',

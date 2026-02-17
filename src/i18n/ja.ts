@@ -89,6 +89,14 @@ const ja: TranslationDict = {
   'clothing.tableHeader.part': '部位',
   'clothing.tableHeader.size': '寸法 (cm)',
   'clothing.submit': 'フィッティング確認',
+  'clothing.paste': '📋 サイズ表を貼り付け',
+  'clothing.pasteDesc': 'ショッピングサイトのサイズ表をドラッグ→コピー→ここに貼り付け',
+  'clothing.pastePlaceholder': 'サイズ表をここに貼り付けてください...\n\n例:\nサイズ\t着丈\t肩幅\t身幅\t袖丈\nS\t65\t43\t50\t58\nM\t67\t45\t52\t60',
+  'clothing.parseFailed': 'サイズ表を認識できません。表をドラッグしてコピーしてください。',
+  'clothing.selectSize': 'サイズを選択',
+  'clothing.applied': '✅ {{size}}サイズ適用',
+  'clothing.pasteClose': '閉じる',
+  'clothing.mappedCount': '{{count}}項目認識',
 
   // Measurement labels
   'measure.shoulderWidth': '肩幅',
