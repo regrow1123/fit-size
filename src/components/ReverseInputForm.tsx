@@ -407,7 +407,7 @@ interface BodyStatsPanelProps {
   totalDataPoints: number;
 }
 
-function BodyStatsPanel({ gender, height, weight, garmentEstimates, totalDataPoints }: BodyStatsPanelProps) {
+function BodyStatsPanel({ gender, height, weight, garmentEstimates }: BodyStatsPanelProps) {
   // Build BodyMeasurements from garment estimates
   const bodyFromGarments = useMemo(() => {
     return estimatesToBodyMeasurements(garmentEstimates, gender, height, weight);
@@ -424,67 +424,32 @@ function BodyStatsPanel({ gender, height, weight, garmentEstimates, totalDataPoi
     );
   }, [gender, height, weight, bodyFromGarments]);
 
-  const items: { key: string; label: string; icon: string; value: number; garmentData?: { value: number; count: number } }[] = [
-    { key: 'shoulderWidth', label: '어깨너비', icon: '↔️', value: fullStats.shoulderWidth, garmentData: garmentEstimates.shoulderWidth },
-    { key: 'chestCirc', label: '가슴둘레', icon: '📏', value: fullStats.chestCirc, garmentData: garmentEstimates.chestCirc },
-    { key: 'waistCirc', label: '허리둘레', icon: '📐', value: fullStats.waistCirc, garmentData: garmentEstimates.waistCirc },
-    { key: 'hipCirc', label: '엉덩이둘레', icon: '🍑', value: fullStats.hipCirc, garmentData: garmentEstimates.hipCirc },
-    { key: 'armLength', label: '팔길이', icon: '💪', value: fullStats.armLength },
-    { key: 'neckCirc', label: '목둘레', icon: '👔', value: fullStats.neckCirc },
-    { key: 'torsoLength', label: '상체길이', icon: '📐', value: fullStats.torsoLength },
+  const items: { key: string; label: string; value: number; fromGarment: boolean }[] = [
+    { key: 'shoulderWidth', label: '어깨너비', value: fullStats.shoulderWidth, fromGarment: !!garmentEstimates.shoulderWidth },
+    { key: 'chestCirc', label: '가슴둘레', value: fullStats.chestCirc, fromGarment: !!garmentEstimates.chestCirc },
+    { key: 'waistCirc', label: '허리둘레', value: fullStats.waistCirc, fromGarment: !!garmentEstimates.waistCirc },
+    { key: 'hipCirc', label: '엉덩이둘레', value: fullStats.hipCirc, fromGarment: !!garmentEstimates.hipCirc },
+    { key: 'armLength', label: '팔길이', value: fullStats.armLength, fromGarment: false },
+    { key: 'neckCirc', label: '목둘레', value: fullStats.neckCirc, fromGarment: false },
+    { key: 'torsoLength', label: '상체길이', value: fullStats.torsoLength, fromGarment: false },
   ];
 
   return (
-    <div className="bg-gradient-to-br from-gray-50 to-blue-50 border border-gray-200 rounded-xl p-4 space-y-3">
-      <div className="flex items-center justify-between">
-        <h3 className="text-sm font-bold text-gray-700">📊 추정 체형 수치</h3>
-        {totalDataPoints > 0 && (
-          <span className="text-xs text-green-600 bg-green-100 px-2 py-0.5 rounded-full">
-            옷 데이터 {totalDataPoints}개 반영
-          </span>
-        )}
+    <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 space-y-3">
+      <h3 className="text-sm font-bold text-gray-700">추정 체형 수치</h3>
+      <div className="grid grid-cols-2 gap-x-4 gap-y-1.5">
+        {items.map(item => (
+          <div key={item.key} className="flex items-center justify-between text-sm py-1">
+            <span className="text-gray-500">{item.label}</span>
+            <span className={`font-mono font-semibold ${item.fromGarment ? 'text-blue-600' : 'text-gray-800'}`}>
+              {item.value.toFixed(1)}
+              <span className="text-xs text-gray-400 ml-0.5">cm</span>
+            </span>
+          </div>
+        ))}
       </div>
-
-      <div className="space-y-1.5">
-        {items.map(item => {
-          const fromGarment = !!item.garmentData;
-          return (
-            <div key={item.key} className="flex items-center gap-2 bg-white rounded-lg px-3 py-2 text-sm">
-              <span className="w-5 text-center">{item.icon}</span>
-              <span className="flex-1 text-gray-600">{item.label}</span>
-              <span className={`font-mono font-semibold ${fromGarment ? 'text-blue-600' : 'text-gray-800'}`}>
-                {item.value.toFixed(1)}
-                <span className="text-xs text-gray-400 ml-0.5">cm</span>
-              </span>
-              {fromGarment && item.garmentData && (
-                <span className="flex items-center gap-1">
-                  <span className="text-xs text-blue-400" title="옷 데이터에서 추정">👔</span>
-                  <ConfidenceDots count={item.garmentData.count} />
-                </span>
-              )}
-              {!fromGarment && (
-                <span className="text-xs text-gray-300" title="Size Korea 통계 기반">통계</span>
-              )}
-            </div>
-          );
-        })}
-      </div>
-
-      <p className="text-xs text-gray-400">
-        👔 옷 데이터 기반 &nbsp;|&nbsp; <span className="text-gray-300">통계</span> Size Korea 추정
-        {totalDataPoints > 0 && ' + 편차 보정'}
-      </p>
     </div>
   );
 }
 
-function ConfidenceDots({ count }: { count: number }) {
-  const dots = Math.min(count, 5);
-  return (
-    <span className="ml-1 inline-flex gap-0.5" title={`${count}개 데이터`}>
-      {Array.from({ length: 5 }, (_, i) => (
-        <span key={i} className={`inline-block w-1.5 h-1.5 rounded-full ${i < dots ? 'bg-green-500' : 'bg-gray-200'}`} />
-      ))}
-    </span>
-  );
-}
+// (removed ConfidenceDots — no longer used)
