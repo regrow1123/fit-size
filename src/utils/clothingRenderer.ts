@@ -51,52 +51,49 @@ export function calculateClothingDimensions(
   return base;
 }
 
-// ── Constants ──
-
+// ── Style ──
 const COLORS = {
-  top: { fill: 'rgba(70, 130, 180, 0.35)', stroke: 'rgba(30, 80, 140, 0.8)' },
-  pants: { fill: 'rgba(80, 120, 160, 0.35)', stroke: 'rgba(30, 70, 130, 0.8)' },
-  dress: { fill: 'rgba(160, 70, 120, 0.3)', stroke: 'rgba(130, 30, 70, 0.8)' },
+  top:   { fill: 'rgba(70, 130, 180, 0.30)', stroke: 'rgba(30, 80, 140, 0.75)' },
+  pants: { fill: 'rgba(80, 120, 160, 0.30)', stroke: 'rgba(30, 70, 130, 0.75)' },
+  dress: { fill: 'rgba(160, 70, 120, 0.25)', stroke: 'rgba(130, 30, 70, 0.75)' },
 };
+
+const ARM_ANGLE = 15 * Math.PI / 180; // 아바타와 동일한 팔 각도
+const sinA = Math.sin(ARM_ANGLE);
+const cosA = Math.cos(ARM_ANGLE);
+
+function setStyle(ctx: CanvasRenderingContext2D, colors: { fill: string; stroke: string }) {
+  ctx.fillStyle = colors.fill;
+  ctx.strokeStyle = colors.stroke;
+  ctx.lineWidth = 1.5;
+  ctx.setLineDash([]);
+}
 
 /**
  * Canvas에 옷을 아바타 위에 오버레이
  */
 export function drawClothing(
   ctx: CanvasRenderingContext2D,
-  avatarDims: AvatarDimensions,
-  clothingDims: ClothingDimensions,
+  av: AvatarDimensions,
+  cl: ClothingDimensions,
   canvasWidth: number,
 ) {
   ctx.save();
   ctx.lineJoin = 'round';
   ctx.lineCap = 'round';
 
-  switch (clothingDims.category) {
-    case 'pants':
-      drawPants(ctx, avatarDims, clothingDims, canvasWidth);
-      break;
-    case 'dress':
-      drawDress(ctx, avatarDims, clothingDims, canvasWidth);
-      break;
-    default:
-      drawTop(ctx, avatarDims, clothingDims, canvasWidth);
-      break;
+  switch (cl.category) {
+    case 'pants': drawPants(ctx, av, cl, canvasWidth); break;
+    case 'dress': drawDress(ctx, av, cl, canvasWidth); break;
+    default: drawTop(ctx, av, cl, canvasWidth); break;
   }
 
   ctx.restore();
 }
 
-// ── Helpers ──
-function setStyle(ctx: CanvasRenderingContext2D, colors: { fill: string; stroke: string }, dashed = true) {
-  ctx.fillStyle = colors.fill;
-  ctx.strokeStyle = colors.stroke;
-  ctx.lineWidth = 1.8;
-  if (dashed) ctx.setLineDash([5, 4]);
-  else ctx.setLineDash([]);
-}
-
-// ── Top (tshirt / long_sleeve / jacket) ──
+// ════════════════════════════════════════
+// TOP (tshirt / long_sleeve / jacket)
+// ════════════════════════════════════════
 function drawTop(
   ctx: CanvasRenderingContext2D,
   av: AvatarDimensions,
@@ -104,113 +101,125 @@ function drawTop(
   cw: number,
 ) {
   const cx = cw / 2;
-  const sy = av.shoulderY;
-  const isLong = cl.category === 'long_sleeve' || cl.category === 'jacket';
   const colors = COLORS.top;
+  const isLong = cl.category === 'long_sleeve' || cl.category === 'jacket';
 
-  // Half widths
+  // 옷 좌표: 아바타 기준점 활용
+  const sy = av.shoulderY;
   const shH = cl.shoulderWidth / 2;
-  const chH = cl.chestWidth / 2;
+  const chH = cl.chestWidth / 2; // 단면폭 (px)
   const hemH = cl.hemWidth / 2;
-  const neckH = av.neckWidth / 2;
-  const tLen = cl.totalLength;
+  const nkH = av.neckWidth / 2;
+  const hemY = sy + cl.totalLength;
 
-  // Y positions
-  const armpitY = sy + tLen * 0.15;
-  const chestY = sy + tLen * 0.25;
-  const waistY = sy + tLen * 0.6;
-  const hemY = sy + tLen;
+  // 몸통의 Y 위치는 아바타 비례 기반
+  const torsoLen = cl.totalLength;
+  const armpitY = sy + torsoLen * 0.12;
+  const chestY = sy + torsoLen * 0.22;
+  const waistY = sy + torsoLen * 0.55;
 
-  // ── 1. Draw torso (body part) ──
-  setStyle(ctx, colors);
-  ctx.beginPath();
-
-  // Neckline
-  ctx.moveTo(cx - neckH, sy - 3);
-  ctx.quadraticCurveTo(cx, sy + 8, cx + neckH, sy - 3);
-
-  // Right side: shoulder → chest → waist → hem
-  ctx.lineTo(cx + shH, sy);
-  ctx.bezierCurveTo(cx + shH, armpitY, cx + chH, armpitY, cx + chH, chestY);
-  ctx.bezierCurveTo(cx + chH, waistY * 0.6 + chestY * 0.4, cx + hemH, waistY, cx + hemH, hemY);
-
-  // Hem
-  ctx.lineTo(cx - hemH, hemY);
-
-  // Left side: hem → waist → chest → shoulder
-  ctx.bezierCurveTo(cx - hemH, waistY, cx - chH, waistY * 0.6 + chestY * 0.4, cx - chH, chestY);
-  ctx.bezierCurveTo(cx - chH, armpitY, cx - shH, armpitY, cx - shH, sy);
-
-  ctx.closePath();
-  ctx.fill();
-  ctx.stroke();
-
-  // ── 2. Draw sleeves (separate shapes on top) ──
+  // ── 소매 (먼저 — 몸통 뒤에) ──
   const slLen = cl.sleeveLength;
   const slTopW = cl.sleeveWidth;
-  const slEndW = isLong ? (cl.cuffWidth ?? slTopW * 0.6) : slTopW;
+  const slEndW = isLong ? (cl.cuffWidth ?? slTopW * 0.6) : slTopW * 0.9;
 
-  // Sleeve angle: short sleeves flare outward more
-  const angle = isLong ? 0.25 : 0.4; // radians from vertical
+  for (const s of [-1, 1]) {
+    const sx = cx + s * shH;
+    // 소매도 아바타와 같은 15도 각도
+    const tipCX = sx + s * slLen * sinA;
+    const tipCY = sy + slLen * cosA;
 
-  for (const side of [-1, 1] as const) {
-    const shoulderX = cx + side * shH;
-    const armpitX = cx + side * Math.max(chH, shH - 4);
+    // 소매 상단폭, 하단폭 (수직에 수직인 방향)
+    const perpX = cosA * s;
+    const perpY = -sinA;
 
-    // Sleeve direction vector
-    const dx = Math.sin(angle) * slLen * side;
-    const dy = Math.cos(angle) * slLen;
+    // 소매 시작 (어깨-겨드랑이)
+    const outerStartX = sx;
+    const outerStartY = sy;
+    const innerStartX = cx + s * Math.max(chH, shH - 5);
+    const innerStartY = armpitY;
 
-    // Sleeve tip center
-    const tipX = shoulderX + dx;
-    const tipY = sy + dy;
-
-    // Perpendicular to sleeve direction for width
-    const perpX = Math.cos(angle) * side;
-    const perpY = -Math.sin(angle);
-
-    // Top and bottom edges of sleeve
-    const outerTopX = shoulderX;
-    const outerTopY = sy;
-    const outerEndX = tipX + perpX * slEndW / 2;
-    const outerEndY = tipY + perpY * slEndW / 2;
-
-    const innerTopX = armpitX;
-    const innerTopY = armpitY;
-    const innerEndX = tipX - perpX * slEndW / 2;
-    const innerEndY = tipY - perpY * slEndW / 2;
+    // 소매 끝
+    const outerEndX = tipCX + perpX * slEndW / 2;
+    const outerEndY = tipCY + perpY * slEndW / 2;
+    const innerEndX = tipCX - perpX * slEndW / 2;
+    const innerEndY = tipCY - perpY * slEndW / 2;
 
     setStyle(ctx, colors);
     ctx.beginPath();
-    ctx.moveTo(outerTopX, outerTopY);
+    ctx.moveTo(outerStartX, outerStartY);
 
-    // Outer edge: shoulder to tip
+    // 외측
     ctx.bezierCurveTo(
-      outerTopX + dx * 0.3, outerTopY + dy * 0.3,
-      outerEndX - dx * 0.2, outerEndY - dy * 0.2,
+      outerStartX + (tipCX - sx) * 0.35 + perpX * slTopW * 0.15,
+      outerStartY + (tipCY - sy) * 0.35 + perpY * slTopW * 0.15,
+      outerEndX - (tipCX - sx) * 0.2,
+      outerEndY - (tipCY - sy) * 0.2,
       outerEndX, outerEndY,
     );
 
-    // Sleeve end cap
+    // 소매 끝단
     ctx.lineTo(innerEndX, innerEndY);
 
-    // Inner edge: tip to armpit
+    // 내측
     ctx.bezierCurveTo(
-      innerEndX - dx * 0.2, innerEndY - dy * 0.2,
-      innerTopX + dx * 0.1, innerTopY + dy * 0.3,
-      innerTopX, innerTopY,
+      innerEndX - (tipCX - sx) * 0.2,
+      innerEndY - (tipCY - sy) * 0.2,
+      innerStartX + (tipCX - sx) * 0.15,
+      innerStartY + (tipCY - sy) * 0.25,
+      innerStartX, innerStartY,
     );
-
     ctx.closePath();
     ctx.fill();
     ctx.stroke();
   }
 
+  // ── 몸통 ──
+  setStyle(ctx, colors);
+  ctx.beginPath();
+
+  // 네크라인
+  ctx.moveTo(cx - nkH, sy - 2);
+  ctx.quadraticCurveTo(cx, sy + 6, cx + nkH, sy - 2);
+
+  // 오른쪽: 어깨 → 겨드랑이 → 가슴 → 허리 → 밑단
+  ctx.lineTo(cx + shH, sy);
+  ctx.bezierCurveTo(
+    cx + shH + 1, sy + (armpitY - sy) * 0.6,
+    cx + chH + 3, armpitY,
+    cx + chH, chestY,
+  );
+  ctx.bezierCurveTo(
+    cx + chH - 1, chestY + (waistY - chestY) * 0.5,
+    cx + hemH + 2, waistY,
+    cx + hemH, hemY,
+  );
+
+  // 밑단
+  ctx.lineTo(cx - hemH, hemY);
+
+  // 왼쪽 (대칭)
+  ctx.bezierCurveTo(
+    cx - hemH - 2, waistY,
+    cx - chH + 1, chestY + (waistY - chestY) * 0.5,
+    cx - chH, chestY,
+  );
+  ctx.bezierCurveTo(
+    cx - chH - 3, armpitY,
+    cx - shH - 1, sy + (armpitY - sy) * 0.6,
+    cx - shH, sy,
+  );
+
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+
   ctx.setLineDash([]);
-  drawFitBadges(ctx, av, cl, cx, sy);
 }
 
-// ── Pants ──
+// ════════════════════════════════════════
+// PANTS
+// ════════════════════════════════════════
 function drawPants(
   ctx: CanvasRenderingContext2D,
   av: AvatarDimensions,
@@ -218,65 +227,61 @@ function drawPants(
   cw: number,
 ) {
   const cx = cw / 2;
-  const waistY = av.shoulderY + (av.crotchY - av.shoulderY);
   const colors = COLORS.pants;
 
   const wH = (cl.waistWidth ?? av.hipWidth * 0.9) / 2;
   const hipH = (cl.hipWidth ?? av.hipWidth) / 2;
-  const thH = (cl.thighWidth ?? av.thighWidth * 1.5) / 2;
-  const knH = (cl.kneeWidth ?? av.thighWidth * 1.2) / 2;
+  const thH = (cl.thighWidth ?? av.thighWidth) / 2;
+  const knH = (cl.kneeWidth ?? av.kneeWidth) / 2;
   const hemH = cl.hemWidth / 2;
-  const rise = cl.rise ?? (av.crotchY - av.shoulderY) * 0.3;
-  const tLen = cl.totalLength;
+  const rise = cl.rise ?? (av.crotchY - av.waistY) * 0.6;
 
-  const hipY = waistY + rise * 0.45;
+  // 아바타 기준점 활용
+  const waistY = av.waistY;
   const crotchY = waistY + rise;
-  const hemY = waistY + tLen;
+  const hemY = waistY + cl.totalLength;
+  const hipY = waistY + rise * 0.5;
   const kneeY = crotchY + (hemY - crotchY) * 0.45;
 
-  // Inner leg gap
-  const gap = av.thighWidth * 0.4;
+  const gap = av.thighWidth * 0.3; // 내측 간격
 
   setStyle(ctx, colors);
 
-  // Draw each leg separately then connect at waist
-  for (const side of [-1, 1] as const) {
+  for (const s of [-1, 1]) {
     ctx.beginPath();
-
-    // Waist
     ctx.moveTo(cx, waistY);
-    ctx.lineTo(cx + side * wH, waistY);
+    ctx.lineTo(cx + s * wH, waistY);
 
-    // Outer: waist → hip → thigh → knee → hem
+    // 외측: 허리 → 엉덩이 → 허벅지 → 무릎 → 밑단
     ctx.bezierCurveTo(
-      cx + side * (wH + 1), waistY + rise * 0.2,
-      cx + side * (hipH + 1), hipY - rise * 0.1,
-      cx + side * hipH, hipY,
+      cx + s * (wH + 1), waistY + rise * 0.2,
+      cx + s * (hipH + 1), hipY - 5,
+      cx + s * hipH, hipY,
     );
     ctx.bezierCurveTo(
-      cx + side * hipH, hipY + rise * 0.3,
-      cx + side * thH, crotchY - rise * 0.1,
-      cx + side * thH, crotchY,
+      cx + s * hipH, hipY + (crotchY - hipY) * 0.4,
+      cx + s * thH, crotchY - (crotchY - hipY) * 0.15,
+      cx + s * thH, crotchY,
     );
     ctx.bezierCurveTo(
-      cx + side * thH, crotchY + (kneeY - crotchY) * 0.3,
-      cx + side * knH, kneeY - (kneeY - crotchY) * 0.2,
-      cx + side * knH, kneeY,
+      cx + s * thH, crotchY + (kneeY - crotchY) * 0.35,
+      cx + s * knH * 1.05, kneeY - (kneeY - crotchY) * 0.15,
+      cx + s * knH, kneeY,
     );
     ctx.bezierCurveTo(
-      cx + side * knH, kneeY + (hemY - kneeY) * 0.3,
-      cx + side * hemH, hemY - (hemY - kneeY) * 0.2,
-      cx + side * hemH, hemY,
+      cx + s * knH, kneeY + (hemY - kneeY) * 0.3,
+      cx + s * hemH, hemY - (hemY - kneeY) * 0.15,
+      cx + s * hemH, hemY,
     );
 
-    // Hem bottom
-    ctx.lineTo(cx + side * gap, hemY);
+    // 밑단
+    ctx.lineTo(cx + s * gap, hemY);
 
-    // Inner: hem → crotch
+    // 내측: 밑단 → 가랑이
     ctx.bezierCurveTo(
-      cx + side * gap, hemY - (hemY - crotchY) * 0.3,
-      cx + side * gap, crotchY + 15,
-      cx, crotchY + 3,
+      cx + s * gap, hemY - (hemY - crotchY) * 0.3,
+      cx + s * gap * 0.8, crotchY + 12,
+      cx, crotchY + 4,
     );
 
     ctx.closePath();
@@ -284,26 +289,19 @@ function drawPants(
     ctx.stroke();
   }
 
-  // Waistband accent line
+  // 허리밴드
   ctx.setLineDash([]);
+  ctx.strokeStyle = colors.stroke;
+  ctx.lineWidth = 2;
   ctx.beginPath();
   ctx.moveTo(cx - wH, waistY);
   ctx.lineTo(cx + wH, waistY);
-  ctx.strokeStyle = colors.stroke;
-  ctx.lineWidth = 2;
   ctx.stroke();
-
-  // Fit badges
-  const scale = pxToCmScale(av);
-  const badges: FitBadge[] = [
-    { label: '허리', diffCm: ((cl.waistWidth ?? 0) - av.waistWidth) * scale, x: cx + wH + 8, y: waistY + 8 },
-    { label: '엉덩이', diffCm: ((cl.hipWidth ?? 0) - av.hipWidth) * scale, x: cx + hipH + 8, y: hipY + 5 },
-    { label: '허벅지', diffCm: ((cl.thighWidth ?? 0) - av.thighWidth * 1.3) * scale, x: cx + thH + 8, y: crotchY + 5 },
-  ];
-  drawBadges(ctx, badges);
 }
 
-// ── Dress ──
+// ════════════════════════════════════════
+// DRESS
+// ════════════════════════════════════════
 function drawDress(
   ctx: CanvasRenderingContext2D,
   av: AvatarDimensions,
@@ -311,156 +309,80 @@ function drawDress(
   cw: number,
 ) {
   const cx = cw / 2;
-  const sy = av.shoulderY;
   const colors = COLORS.dress;
 
+  const sy = av.shoulderY;
   const shH = cl.shoulderWidth / 2;
   const chH = cl.chestWidth / 2;
-  const neckH = av.neckWidth / 2;
+  const nkH = av.neckWidth / 2;
   const waistH = chH * 0.85;
   const hipH = (cl.hipWidth ?? chH * 1.1) / 2;
   const hemH = cl.hemWidth / 2;
-  const tLen = cl.totalLength;
+  const hemY = sy + cl.totalLength;
 
+  const tLen = cl.totalLength;
   const armpitY = sy + tLen * 0.1;
   const chestY = sy + tLen * 0.15;
   const waistY = sy + tLen * 0.35;
   const hipY = sy + tLen * 0.45;
-  const hemY = sy + tLen;
 
-  // ── Torso + skirt ──
-  setStyle(ctx, colors);
-  ctx.beginPath();
-
-  // Neckline
-  ctx.moveTo(cx - neckH, sy - 3);
-  ctx.quadraticCurveTo(cx, sy + 8, cx + neckH, sy - 3);
-
-  // Right side
-  ctx.lineTo(cx + shH, sy);
-  ctx.bezierCurveTo(cx + shH, armpitY, cx + chH, armpitY, cx + chH, chestY);
-  ctx.bezierCurveTo(cx + chH, waistY * 0.7 + chestY * 0.3, cx + waistH, waistY, cx + waistH, waistY);
-  ctx.bezierCurveTo(cx + waistH + 1, hipY * 0.5 + waistY * 0.5, cx + hipH, hipY, cx + hipH, hipY);
-  ctx.bezierCurveTo(cx + hipH + 3, (hipY + hemY) / 2, cx + hemH + 2, hemY - tLen * 0.08, cx + hemH, hemY);
-
-  // Hem
-  ctx.lineTo(cx - hemH, hemY);
-
-  // Left side (mirror)
-  ctx.bezierCurveTo(cx - hemH - 2, hemY - tLen * 0.08, cx - hipH - 3, (hipY + hemY) / 2, cx - hipH, hipY);
-  ctx.bezierCurveTo(cx - hipH, hipY, cx - waistH - 1, hipY * 0.5 + waistY * 0.5, cx - waistH, waistY);
-  ctx.bezierCurveTo(cx - waistH, waistY, cx - chH, waistY * 0.7 + chestY * 0.3, cx - chH, chestY);
-  ctx.bezierCurveTo(cx - chH, armpitY, cx - shH, armpitY, cx - shH, sy);
-
-  ctx.closePath();
-  ctx.fill();
-  ctx.stroke();
-
-  // ── Short sleeves ──
+  // 소매
   const slLen = cl.sleeveLength;
   const slW = cl.sleeveWidth;
-  const angle = 0.4;
-
-  for (const side of [-1, 1] as const) {
-    const shoulderX = cx + side * shH;
-    const armpitX = cx + side * Math.max(chH, shH - 4);
-    const dx = Math.sin(angle) * slLen * side;
-    const dy = Math.cos(angle) * slLen;
-    const tipX = shoulderX + dx;
-    const tipY = sy + dy;
-    const perpX = Math.cos(angle) * side;
-    const perpY = -Math.sin(angle);
+  for (const s of [-1, 1]) {
+    const sx = cx + s * shH;
+    const tipCX = sx + s * slLen * sinA;
+    const tipCY = sy + slLen * cosA;
+    const perpX = cosA * s;
+    const perpY = -sinA;
 
     setStyle(ctx, colors);
     ctx.beginPath();
-    ctx.moveTo(shoulderX, sy);
+    ctx.moveTo(sx, sy);
     ctx.bezierCurveTo(
-      shoulderX + dx * 0.3, sy + dy * 0.3,
-      tipX + perpX * slW / 2 - dx * 0.2, tipY + perpY * slW / 2 - dy * 0.2,
-      tipX + perpX * slW / 2, tipY + perpY * slW / 2,
+      sx + (tipCX - sx) * 0.35 + perpX * slW * 0.15,
+      sy + (tipCY - sy) * 0.35 + perpY * slW * 0.15,
+      tipCX + perpX * slW / 2 - (tipCX - sx) * 0.2,
+      tipCY + perpY * slW / 2 - (tipCY - sy) * 0.2,
+      tipCX + perpX * slW / 2, tipCY + perpY * slW / 2,
     );
-    ctx.lineTo(tipX - perpX * slW / 2, tipY - perpY * slW / 2);
+    ctx.lineTo(tipCX - perpX * slW / 2, tipCY - perpY * slW / 2);
     ctx.bezierCurveTo(
-      tipX - perpX * slW / 2 - dx * 0.2, tipY - perpY * slW / 2 - dy * 0.2,
-      armpitX + dx * 0.1, armpitY + dy * 0.3,
-      armpitX, armpitY,
+      tipCX - perpX * slW / 2 - (tipCX - sx) * 0.2,
+      tipCY - perpY * slW / 2 - (tipCY - sy) * 0.2,
+      cx + s * Math.max(chH, shH - 5) + (tipCX - sx) * 0.15,
+      armpitY + (tipCY - sy) * 0.25,
+      cx + s * Math.max(chH, shH - 5), armpitY,
     );
     ctx.closePath();
     ctx.fill();
     ctx.stroke();
   }
 
+  // 몸통 + 스커트
+  setStyle(ctx, colors);
+  ctx.beginPath();
+  ctx.moveTo(cx - nkH, sy - 2);
+  ctx.quadraticCurveTo(cx, sy + 6, cx + nkH, sy - 2);
+
+  ctx.lineTo(cx + shH, sy);
+  ctx.bezierCurveTo(cx + shH, armpitY, cx + chH + 2, armpitY, cx + chH, chestY);
+  ctx.bezierCurveTo(cx + chH, (chestY + waistY) / 2, cx + waistH, waistY, cx + waistH, waistY);
+  ctx.bezierCurveTo(cx + waistH + 1, (waistY + hipY) / 2, cx + hipH, hipY, cx + hipH, hipY);
+  ctx.bezierCurveTo(cx + hipH + 3, (hipY + hemY) / 2, cx + hemH + 2, hemY - tLen * 0.06, cx + hemH, hemY);
+
+  ctx.lineTo(cx - hemH, hemY);
+
+  ctx.bezierCurveTo(cx - hemH - 2, hemY - tLen * 0.06, cx - hipH - 3, (hipY + hemY) / 2, cx - hipH, hipY);
+  ctx.bezierCurveTo(cx - hipH, hipY, cx - waistH - 1, (waistY + hipY) / 2, cx - waistH, waistY);
+  ctx.bezierCurveTo(cx - waistH, waistY, cx - chH, (chestY + waistY) / 2, cx - chH, chestY);
+  ctx.bezierCurveTo(cx - chH - 2, armpitY, cx - shH, armpitY, cx - shH, sy);
+
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+
   ctx.setLineDash([]);
-  drawFitBadges(ctx, av, cl, cx, sy);
-}
-
-// ── Fit badges ──
-interface FitBadge {
-  label: string;
-  diffCm: number;
-  x: number;
-  y: number;
-}
-
-function pxToCmScale(av: AvatarDimensions): number {
-  return 1 / ((av.totalHeight / 180) * (600 / 180));
-}
-
-function drawFitBadges(
-  ctx: CanvasRenderingContext2D,
-  av: AvatarDimensions,
-  cl: ClothingDimensions,
-  cx: number,
-  shoulderY: number,
-) {
-  const scale = pxToCmScale(av);
-  const chestY = shoulderY + (av.crotchY - av.shoulderY) * 0.25;
-
-  const badges: FitBadge[] = [
-    { label: '어깨', diffCm: (cl.shoulderWidth - av.shoulderWidth) * scale, x: cx + cl.shoulderWidth / 2 + 8, y: shoulderY + 5 },
-    { label: '가슴', diffCm: (cl.chestWidth - av.chestWidth) * scale, x: cx + Math.max(cl.chestWidth, av.chestWidth) / 2 + 8, y: chestY },
-    { label: '밑단', diffCm: (cl.hemWidth - av.waistWidth) * scale, x: cx + Math.max(cl.hemWidth, av.waistWidth) / 2 + 8, y: shoulderY + cl.totalLength - 5 },
-  ];
-  drawBadges(ctx, badges);
-}
-
-function drawBadges(ctx: CanvasRenderingContext2D, badges: FitBadge[]) {
-  ctx.setLineDash([]);
-  ctx.textBaseline = 'middle';
-
-  for (const b of badges) {
-    const d = b.diffCm;
-    let color: string;
-    let bgColor: string;
-    let status: string;
-
-    if (d > 3) {
-      color = '#92400E'; bgColor = 'rgba(253, 230, 138, 0.9)'; status = '여유';
-    } else if (d >= -1) {
-      color = '#065F46'; bgColor = 'rgba(167, 243, 208, 0.9)'; status = '적당';
-    } else {
-      color = '#991B1B'; bgColor = 'rgba(254, 202, 202, 0.9)'; status = '빡빡';
-    }
-
-    const sign = d > 0 ? '+' : '';
-    const text = `${b.label} ${status} ${sign}${d.toFixed(1)}`;
-
-    ctx.font = 'bold 11px system-ui, sans-serif';
-    const tw = ctx.measureText(text).width;
-    const px = 6, py = 4;
-
-    ctx.fillStyle = bgColor;
-    ctx.beginPath();
-    ctx.roundRect(b.x, b.y - py - 6, tw + px * 2, 16 + py, 4);
-    ctx.fill();
-
-    ctx.strokeStyle = color;
-    ctx.lineWidth = 1;
-    ctx.stroke();
-
-    ctx.fillStyle = color;
-    ctx.fillText(text, b.x + px, b.y + 2);
-  }
 }
 
 /**
