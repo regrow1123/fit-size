@@ -165,6 +165,71 @@ export function parseSizeChart(text: string): ParsedSizeChart | null {
 }
 
 /**
+ * 사이즈표 키 → 앵커포인트 쌍 + 카테고리 매핑
+ * ReverseInputForm에서 사이즈표를 ReverseMeasurement[]로 변환할 때 사용
+ */
+import type { ClothingCategory } from '../types';
+import type { FitFeedback, ReverseMeasurement } from './reverseEstimator';
+
+interface AnchorMapping {
+  startPointId: string;
+  endPointId: string;
+  categories: ClothingCategory[];
+}
+
+const SIZE_KEY_TO_ANCHORS: Record<string, AnchorMapping> = {
+  shoulderWidth: {
+    startPointId: 'shoulder_end_left', endPointId: 'shoulder_end_right',
+    categories: ['tshirt', 'long_sleeve', 'jacket', 'dress'],
+  },
+  chestWidth: {
+    startPointId: 'chest_left', endPointId: 'chest_right',
+    categories: ['tshirt', 'long_sleeve', 'jacket', 'dress'],
+  },
+  waistCirc: {
+    startPointId: 'waist_left', endPointId: 'waist_right',
+    categories: ['tshirt', 'long_sleeve', 'jacket', 'dress', 'pants'],
+  },
+  hipCirc: {
+    startPointId: 'hip_left', endPointId: 'hip_right',
+    categories: ['pants', 'dress'],
+  },
+  totalLength: {
+    startPointId: 'below_back_neck', endPointId: 'hem_center',
+    categories: ['tshirt', 'long_sleeve', 'jacket', 'dress'],
+  },
+  sleeveLength: {
+    startPointId: 'shoulder_end_left', endPointId: 'sleeve_end_left',
+    categories: ['tshirt', 'long_sleeve', 'jacket', 'dress'],
+  },
+};
+
+/**
+ * 파싱된 사이즈표의 한 행을 ReverseMeasurement[]로 변환
+ */
+export function sizeRowToReverseMeasurements(
+  row: SizeChartRow,
+  category: ClothingCategory,
+  feedback: FitFeedback = '적당',
+): ReverseMeasurement[] {
+  const result: ReverseMeasurement[] = [];
+
+  for (const [key, value] of Object.entries(row.measurements)) {
+    const mapping = SIZE_KEY_TO_ANCHORS[key];
+    if (!mapping || !mapping.categories.includes(category)) continue;
+
+    result.push({
+      startPointId: mapping.startPointId,
+      endPointId: mapping.endPointId,
+      value,
+      feedback,
+    });
+  }
+
+  return result;
+}
+
+/**
  * 단면(반폭) 값을 둘레로 변환해야 하는 키 목록
  * 쇼핑몰은 보통 "가슴단면 52cm" = 반폭. 둘레 = 52 * 2 = 104cm.
  * 하지만 우리 앱에서 옷 치수는 단면(half)으로 저장하므로 변환 불필요.
