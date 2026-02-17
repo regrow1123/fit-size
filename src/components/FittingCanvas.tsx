@@ -1,5 +1,5 @@
-import { useRef, useEffect } from 'react';
-import type { BodyMeasurements, AvatarDimensions, ClothingCategory, ClothingDimensions } from '../types';
+import { useRef, useEffect, useState, useCallback } from 'react';
+import type { BodyMeasurements, AvatarDimensions, ClothingDimensions, ClothingCategory } from '../types';
 import { calculateAvatarDimensions } from '../utils/avatarCalculator';
 import { drawAvatar } from '../utils/avatarRenderer';
 import { calculateClothingDimensions, drawClothing } from '../utils/clothingRenderer';
@@ -10,11 +10,28 @@ interface Props {
   category?: ClothingCategory;
 }
 
-const CANVAS_WIDTH = 400;
-const CANVAS_HEIGHT = 700;
+const BASE_WIDTH = 400;
+const BASE_HEIGHT = 700;
+const ASPECT = BASE_HEIGHT / BASE_WIDTH; // 1.75
 
 export default function FittingCanvas({ body, clothingMeasurements, category = 'tshirt' }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [size, setSize] = useState({ w: BASE_WIDTH, h: BASE_HEIGHT });
+
+  const measure = useCallback(() => {
+    if (!containerRef.current) return;
+    const maxW = Math.min(containerRef.current.clientWidth, BASE_WIDTH);
+    const w = Math.max(280, maxW);
+    setSize({ w, h: Math.round(w * ASPECT) });
+  }, []);
+
+  useEffect(() => {
+    measure();
+    const ro = new ResizeObserver(measure);
+    if (containerRef.current) ro.observe(containerRef.current);
+    return () => ro.disconnect();
+  }, [measure]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -22,8 +39,12 @@ export default function FittingCanvas({ body, clothingMeasurements, category = '
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
+    // Draw at base resolution, CSS scales down
+    canvas.width = BASE_WIDTH;
+    canvas.height = BASE_HEIGHT;
+
     const avatarDims: AvatarDimensions = calculateAvatarDimensions(body);
-    drawAvatar(ctx, avatarDims, CANVAS_WIDTH, CANVAS_HEIGHT);
+    drawAvatar(ctx, avatarDims, BASE_WIDTH, BASE_HEIGHT);
 
     if (clothingMeasurements) {
       const clothingDims: ClothingDimensions = calculateClothingDimensions(
@@ -31,16 +52,15 @@ export default function FittingCanvas({ body, clothingMeasurements, category = '
         body.height,
         category,
       );
-      drawClothing(ctx, avatarDims, clothingDims, CANVAS_WIDTH);
+      drawClothing(ctx, avatarDims, clothingDims, BASE_WIDTH);
     }
-  }, [body, clothingMeasurements, category]);
+  }, [body, clothingMeasurements, category, size]);
 
   return (
-    <div className="flex flex-col items-center">
+    <div ref={containerRef} className="w-full flex flex-col items-center">
       <canvas
         ref={canvasRef}
-        width={CANVAS_WIDTH}
-        height={CANVAS_HEIGHT}
+        style={{ width: size.w, height: size.h }}
         className="border rounded-lg bg-white shadow-inner"
       />
       <div className="mt-2 flex gap-4 text-xs text-gray-500">

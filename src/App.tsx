@@ -90,7 +90,7 @@ export default function App() {
         </div>
       </header>
 
-      <main className="max-w-4xl mx-auto px-4 py-8">
+      <main className="max-w-4xl mx-auto px-4 py-4 sm:py-8">
         {/* Welcome back banner */}
         {showWelcomeBack && step === 'mode' && (
           <div className="mb-6 bg-gradient-to-r from-green-50 to-blue-50 border border-green-300 rounded-xl p-5 shadow-sm">
@@ -262,7 +262,7 @@ export default function App() {
                   category={category}
                 />
               ) : (
-                <div className="w-[400px] h-[700px] border rounded-lg bg-white flex items-center justify-center text-gray-400">
+                <div className="w-full max-w-[400px] aspect-[4/7] border rounded-lg bg-white flex items-center justify-center text-gray-400">
                   {mode === 'reverse' ? '옷 정보를 입력하면' : '신체 정보를 입력하면'}<br />아바타가 표시됩니다
                 </div>
               )}
