@@ -9,6 +9,7 @@ import {
   estimateBodyFromGarments,
   estimatesToBodyMeasurements,
 } from '../utils/reverseEstimator';
+import { estimateBodyDimensions } from '../data/bodyStats';
 import {
   loadWardrobe,
   saveGarment as persistGarment,
@@ -377,39 +378,14 @@ export default function ReverseInputForm({ onSubmit }: Props) {
         </button>
       )}
 
-      {/* Estimated body dimensions */}
-      {hasEstimates && (
-        <div className="bg-gradient-to-br from-green-50 to-blue-50 border border-green-200 rounded-lg p-4 space-y-2">
-          <h3 className="text-sm font-bold text-green-800">🧍 추정된 체형</h3>
-          <p className="text-xs text-green-600">데이터 포인트: {totalDataPoints}개 (많을수록 정확)</p>
-          <div className="grid grid-cols-2 gap-2 text-sm">
-            {estimates.shoulderWidth && (
-              <div className="bg-white rounded px-2 py-1">
-                어깨너비: <b>{estimates.shoulderWidth.value}cm</b>
-                <ConfidenceDots count={estimates.shoulderWidth.count} />
-              </div>
-            )}
-            {estimates.chestCirc && (
-              <div className="bg-white rounded px-2 py-1">
-                가슴둘레: <b>{estimates.chestCirc.value}cm</b>
-                <ConfidenceDots count={estimates.chestCirc.count} />
-              </div>
-            )}
-            {estimates.waistCirc && (
-              <div className="bg-white rounded px-2 py-1">
-                허리둘레: <b>{estimates.waistCirc.value}cm</b>
-                <ConfidenceDots count={estimates.waistCirc.count} />
-              </div>
-            )}
-            {estimates.hipCirc && (
-              <div className="bg-white rounded px-2 py-1">
-                엉덩이둘레: <b>{(estimates.hipCirc.value as number)}cm</b>
-                <ConfidenceDots count={estimates.hipCirc.count} />
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+      {/* Estimated body dimensions — full stats panel */}
+      <BodyStatsPanel
+        gender={gender}
+        height={height}
+        weight={weight}
+        garmentEstimates={estimates}
+        totalDataPoints={totalDataPoints}
+      />
 
       {/* Submit */}
       <button
@@ -419,6 +395,85 @@ export default function ReverseInputForm({ onSubmit }: Props) {
       >
         🧍 추정 체형으로 아바타 생성
       </button>
+    </div>
+  );
+}
+
+interface BodyStatsPanelProps {
+  gender: 'male' | 'female';
+  height: number;
+  weight: number;
+  garmentEstimates: ReturnType<typeof estimateBodyFromGarments>;
+  totalDataPoints: number;
+}
+
+function BodyStatsPanel({ gender, height, weight, garmentEstimates, totalDataPoints }: BodyStatsPanelProps) {
+  // Build BodyMeasurements from garment estimates
+  const bodyFromGarments = useMemo(() => {
+    return estimatesToBodyMeasurements(garmentEstimates, gender, height, weight);
+  }, [garmentEstimates, gender, height, weight]);
+
+  // Full estimation with Size Korea + deviation propagation
+  const fullStats = useMemo(() => {
+    return estimateBodyDimensions(
+      gender, height, weight,
+      bodyFromGarments.shoulderWidth,
+      bodyFromGarments.chestCirc,
+      bodyFromGarments.waistCirc,
+      bodyFromGarments.hipCirc,
+    );
+  }, [gender, height, weight, bodyFromGarments]);
+
+  const items: { key: string; label: string; icon: string; value: number; garmentData?: { value: number; count: number } }[] = [
+    { key: 'shoulderWidth', label: '어깨너비', icon: '↔️', value: fullStats.shoulderWidth, garmentData: garmentEstimates.shoulderWidth },
+    { key: 'chestCirc', label: '가슴둘레', icon: '📏', value: fullStats.chestCirc, garmentData: garmentEstimates.chestCirc },
+    { key: 'waistCirc', label: '허리둘레', icon: '📐', value: fullStats.waistCirc, garmentData: garmentEstimates.waistCirc },
+    { key: 'hipCirc', label: '엉덩이둘레', icon: '🍑', value: fullStats.hipCirc, garmentData: garmentEstimates.hipCirc },
+    { key: 'armLength', label: '팔길이', icon: '💪', value: fullStats.armLength },
+    { key: 'neckCirc', label: '목둘레', icon: '👔', value: fullStats.neckCirc },
+    { key: 'torsoLength', label: '상체길이', icon: '📐', value: fullStats.torsoLength },
+  ];
+
+  return (
+    <div className="bg-gradient-to-br from-gray-50 to-blue-50 border border-gray-200 rounded-xl p-4 space-y-3">
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-bold text-gray-700">📊 추정 체형 수치</h3>
+        {totalDataPoints > 0 && (
+          <span className="text-xs text-green-600 bg-green-100 px-2 py-0.5 rounded-full">
+            옷 데이터 {totalDataPoints}개 반영
+          </span>
+        )}
+      </div>
+
+      <div className="space-y-1.5">
+        {items.map(item => {
+          const fromGarment = !!item.garmentData;
+          return (
+            <div key={item.key} className="flex items-center gap-2 bg-white rounded-lg px-3 py-2 text-sm">
+              <span className="w-5 text-center">{item.icon}</span>
+              <span className="flex-1 text-gray-600">{item.label}</span>
+              <span className={`font-mono font-semibold ${fromGarment ? 'text-blue-600' : 'text-gray-800'}`}>
+                {item.value.toFixed(1)}
+                <span className="text-xs text-gray-400 ml-0.5">cm</span>
+              </span>
+              {fromGarment && item.garmentData && (
+                <span className="flex items-center gap-1">
+                  <span className="text-xs text-blue-400" title="옷 데이터에서 추정">👔</span>
+                  <ConfidenceDots count={item.garmentData.count} />
+                </span>
+              )}
+              {!fromGarment && (
+                <span className="text-xs text-gray-300" title="Size Korea 통계 기반">통계</span>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      <p className="text-xs text-gray-400">
+        👔 옷 데이터 기반 &nbsp;|&nbsp; <span className="text-gray-300">통계</span> Size Korea 추정
+        {totalDataPoints > 0 && ' + 편차 보정'}
+      </p>
     </div>
   );
 }
