@@ -3,7 +3,7 @@ import { mockProducts } from '../data/mockProducts';
 import { useTranslation } from '../i18n';
 
 const CATEGORY_EMOJI: Record<ClothingCategory, string> = {
-  tshirt: '👕', long_sleeve: '🧥', jacket: '🧥', pants: '👖', dress: '👗',
+  tshirt: '👕',
 };
 
 interface Props {

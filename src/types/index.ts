@@ -1,5 +1,5 @@
 // 의류 카테고리
-export type ClothingCategory = 'tshirt' | 'long_sleeve' | 'jacket' | 'pants' | 'dress';
+export type ClothingCategory = 'tshirt';
 
 // 신체 측정값
 export interface BodyMeasurements {
@@ -95,14 +95,4 @@ export interface ClothingDimensions {
   sleeveLength: number;
   sleeveWidth: number;
   hemWidth: number;
-  // Pants-specific
-  waistWidth?: number;
-  hipWidth?: number;
-  thighWidth?: number;
-  kneeWidth?: number;
-  inseam?: number;
-  rise?: number;
-  // Long sleeve / jacket extras
-  elbowWidth?: number;
-  cuffWidth?: number;
 }

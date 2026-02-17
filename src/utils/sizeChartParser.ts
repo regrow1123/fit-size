@@ -255,34 +255,14 @@ import type { FitFeedback, ReverseMeasurement } from './reverseEstimator';
 interface AnchorMapping {
   startPointId: string;
   endPointId: string;
-  categories: ClothingCategory[];
 }
 
 const SIZE_KEY_TO_ANCHORS: Record<string, AnchorMapping> = {
-  shoulderWidth: {
-    startPointId: 'shoulder_end_left', endPointId: 'shoulder_end_right',
-    categories: ['tshirt', 'long_sleeve', 'jacket', 'dress'],
-  },
-  chestWidth: {
-    startPointId: 'chest_left', endPointId: 'chest_right',
-    categories: ['tshirt', 'long_sleeve', 'jacket', 'dress'],
-  },
-  waistCirc: {
-    startPointId: 'waist_left', endPointId: 'waist_right',
-    categories: ['tshirt', 'long_sleeve', 'jacket', 'dress', 'pants'],
-  },
-  hipCirc: {
-    startPointId: 'hip_left', endPointId: 'hip_right',
-    categories: ['pants', 'dress'],
-  },
-  totalLength: {
-    startPointId: 'below_back_neck', endPointId: 'hem_center',
-    categories: ['tshirt', 'long_sleeve', 'jacket', 'dress'],
-  },
-  sleeveLength: {
-    startPointId: 'shoulder_end_left', endPointId: 'sleeve_end_left',
-    categories: ['tshirt', 'long_sleeve', 'jacket', 'dress'],
-  },
+  shoulderWidth: { startPointId: 'shoulder_end_left', endPointId: 'shoulder_end_right' },
+  chestWidth: { startPointId: 'chest_left', endPointId: 'chest_right' },
+  waistCirc: { startPointId: 'waist_left', endPointId: 'waist_right' },
+  totalLength: { startPointId: 'below_back_neck', endPointId: 'hem_center' },
+  sleeveLength: { startPointId: 'shoulder_end_left', endPointId: 'sleeve_end_left' },
 };
 
 /**
@@ -290,14 +270,14 @@ const SIZE_KEY_TO_ANCHORS: Record<string, AnchorMapping> = {
  */
 export function sizeRowToReverseMeasurements(
   row: SizeChartRow,
-  category: ClothingCategory,
+  _category: ClothingCategory,
   feedback: FitFeedback = '적당',
 ): ReverseMeasurement[] {
   const result: ReverseMeasurement[] = [];
 
   for (const [key, value] of Object.entries(row.measurements)) {
     const mapping = SIZE_KEY_TO_ANCHORS[key];
-    if (!mapping || !mapping.categories.includes(category)) continue;
+    if (!mapping) continue;
 
     result.push({
       startPointId: mapping.startPointId,

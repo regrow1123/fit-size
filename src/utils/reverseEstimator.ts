@@ -42,22 +42,8 @@ const TOP_RULES: MappingRule[] = [
   { starts: ['waist_left'], ends: ['waist_right'], bodyPart: 'waistCirc', isCircumference: true, transform: v => v * 2 },
 ];
 
-const PANTS_RULES: MappingRule[] = [
-  { starts: ['waist_left'], ends: ['waist_right'], bodyPart: 'waistCirc', isCircumference: true, transform: v => v * 2 },
-  { starts: ['hip_left'], ends: ['hip_right'], bodyPart: 'hipCirc', isCircumference: true, transform: v => v * 2 },
-];
-
-const DRESS_RULES: MappingRule[] = [
-  ...TOP_RULES,
-  { starts: ['hip_left'], ends: ['hip_right'], bodyPart: 'hipCirc', isCircumference: true, transform: v => v * 2 },
-];
-
-function getRules(category: ClothingCategory): MappingRule[] {
-  switch (category) {
-    case 'pants': return PANTS_RULES;
-    case 'dress': return DRESS_RULES;
-    default: return TOP_RULES;
-  }
+function getRules(_category: ClothingCategory): MappingRule[] {
+  return TOP_RULES;
 }
 
 function estimateBodyValue(clothingValue: number, feedback: FitFeedback, isCircumference: boolean): number {

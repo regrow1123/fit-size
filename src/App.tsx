@@ -12,7 +12,7 @@ import { useAuth, saveToCloud, loadFromCloud } from './firebase';
 type Step = 'body' | 'clothing' | 'result';
 
 const CATEGORY_ICONS: Record<ClothingCategory, string> = {
-  tshirt: '👕', long_sleeve: '🧥', jacket: '🧥', pants: '👖', dress: '👗',
+  tshirt: '👕',
 };
 
 const LOCALES: Locale[] = ['ko', 'en', 'ja'];

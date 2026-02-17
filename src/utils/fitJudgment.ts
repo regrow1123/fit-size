@@ -41,7 +41,7 @@ function judgeLevel(ease: number, part: string): FitLevel {
 export function judgeFit(
   body: BodyMeasurements,
   clothing: Map<string, number>,
-  category: ClothingCategory,
+  _category: ClothingCategory,
 ): FitResult[] {
   const results: FitResult[] = [];
 
@@ -69,26 +69,6 @@ export function judgeFit(
       const clothCirc = waistCloth < 50 ? waistCloth * 2 : waistCloth;
       const ease = clothCirc - body.waistCirc;
       results.push({ part: 'waist', bodyValue: body.waistCirc, clothValue: clothCirc, ease, level: judgeLevel(ease, 'waist') });
-    }
-  }
-
-  // 엉덩이 (하의/드레스)
-  if ((category === 'pants' || category === 'dress') && body.hipCirc && clothing.has('hipCirc')) {
-    const hipCloth = clothing.get('hipCirc')!;
-    const clothCirc = hipCloth < 60 ? hipCloth * 2 : hipCloth;
-    const ease = clothCirc - body.hipCirc;
-    results.push({ part: 'hip', bodyValue: body.hipCirc, clothValue: clothCirc, ease, level: judgeLevel(ease, 'hip') });
-  }
-
-  // 허벅지 (하의)
-  if (category === 'pants' && clothing.has('thighCirc')) {
-    const thighCloth = clothing.get('thighCirc')!;
-    const clothCirc = thighCloth < 40 ? thighCloth * 2 : thighCloth;
-    // 신체 허벅지 둘레 추정 (Size Korea 기준: 대략 엉덩이둘레 × 0.6)
-    const bodyThigh = body.hipCirc ? body.hipCirc * 0.58 : null;
-    if (bodyThigh) {
-      const ease = clothCirc - bodyThigh;
-      results.push({ part: 'thigh', bodyValue: Math.round(bodyThigh), clothValue: clothCirc, ease, level: judgeLevel(ease, 'thigh') });
     }
   }
 

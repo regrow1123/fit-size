@@ -197,16 +197,16 @@ describe('sizeRowToReverseMeasurements', () => {
     expect(result.find(r => r.startPointId === 'shoulder_end_left' && r.endPointId === 'shoulder_end_right')?.value).toBe(45);
   });
 
-  it('하의에서 상의 전용 키는 제외', () => {
+  it('매핑되지 않는 키는 제외', () => {
     const row = {
       sizeLabel: 'M',
-      measurements: { shoulderWidth: 45, waistCirc: 76, hipCirc: 98 },
+      measurements: { shoulderWidth: 45, waistCirc: 76, unknownKey: 98 },
     };
-    const result = sizeRowToReverseMeasurements(row, 'pants');
-    // shoulderWidth는 pants 카테고리에 없으므로 제외
-    expect(result.find(r => r.value === 45)).toBeUndefined();
+    const result = sizeRowToReverseMeasurements(row, 'tshirt');
+    // unknownKey는 매핑이 없으므로 제외
+    expect(result.find(r => r.value === 98)).toBeUndefined();
+    expect(result.find(r => r.value === 45)).toBeDefined();
     expect(result.find(r => r.value === 76)).toBeDefined();
-    expect(result.find(r => r.value === 98)).toBeDefined();
   });
 });
 

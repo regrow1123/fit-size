@@ -36,7 +36,7 @@ const FEEDBACK_OPTIONS: { value: FitFeedback; labelKey: string; emoji: string; c
 ];
 
 const CATEGORY_ICONS: Record<ClothingCategory, string> = {
-  tshirt: '👕', long_sleeve: '🧥', jacket: '🧥', pants: '👖', dress: '👗',
+  tshirt: '👕',
 };
 
 let garmentIdCounter = Date.now();
