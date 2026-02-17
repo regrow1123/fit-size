@@ -4,6 +4,7 @@ import ClothingInputForm from './components/ClothingInputForm';
 import FittingCanvas from './components/FittingCanvas';
 import ReverseInputForm from './components/ReverseInputForm';
 import ProductRecommendations from './components/ProductRecommendations';
+import FitResultPanel from './components/FitResultPanel';
 import { importWardrobeFromText, exportWardrobeText, subscribe, loadWardrobe } from './utils/storage';
 import { useTranslation, type Locale } from './i18n';
 import { useAuth, saveToCloud, loadFromCloud } from './firebase';
@@ -293,16 +294,13 @@ export default function App() {
             {step === 'clothing' && body && (
               <ClothingInputForm onSubmit={handleClothingSubmit} body={body} />
             )}
-            {step === 'result' && (
+            {step === 'result' && body && clothing && (
               <div className="space-y-4">
                 <h2 className="text-lg font-bold">{t('app.result.title')}</h2>
-                <p className="text-gray-600 text-sm">{t('app.result.desc')}</p>
-                <div className="text-sm space-y-1 text-gray-500">
-                  <p dangerouslySetInnerHTML={{ __html: t('app.result.fitGood') }} />
-                  <p dangerouslySetInnerHTML={{ __html: t('app.result.fitLoose') }} />
-                  <p dangerouslySetInnerHTML={{ __html: t('app.result.fitTight') }} />
-                </div>
-                <div className="flex gap-2">
+
+                <FitResultPanel body={body} clothing={clothing} category={category} />
+
+                <div className="flex gap-2 pt-2">
                   <button
                     onClick={() => setStep('clothing')}
                     className="flex-1 border border-blue-600 text-blue-600 py-2 rounded hover:bg-blue-50 cursor-pointer"
