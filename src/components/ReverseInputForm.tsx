@@ -90,7 +90,7 @@ function Section({
         )}
       </div>
       {(!collapsible || open) && (
-        <div className="p-4 space-y-3">
+        <div className="px-3 py-3 space-y-3">
           {children}
         </div>
       )}
@@ -98,7 +98,7 @@ function Section({
   );
 }
 
-/** Sub-section with lighter styling (2-1, 2-2, etc.) */
+/** Sub-section: divider + inline label, no extra padding */
 function SubSection({
   num,
   title,
@@ -111,19 +111,14 @@ function SubSection({
   children: ReactNode;
 }) {
   return (
-    <div className="border border-gray-150 rounded-lg overflow-hidden">
-      <div className="flex items-center gap-2.5 px-3 py-2 bg-gray-50/80">
-        <span className="flex-shrink-0 w-6 h-6 rounded-full bg-gray-300 text-white text-[11px] font-bold flex items-center justify-center">
-          {num}
-        </span>
-        <div>
-          <h4 className="text-xs font-bold text-gray-600">{title}</h4>
-          {desc && <p className="text-[11px] text-gray-400">{desc}</p>}
-        </div>
+    <div className="space-y-2">
+      <div className="flex items-center gap-2 pt-1">
+        <span className="text-xs font-bold text-blue-500">{num}</span>
+        <span className="text-xs font-bold text-gray-700">{title}</span>
+        <div className="flex-1 border-t border-gray-200" />
       </div>
-      <div className="p-3 space-y-3">
-        {children}
-      </div>
+      {desc && <p className="text-[11px] text-gray-400 -mt-1">{desc}</p>}
+      {children}
     </div>
   );
 }
