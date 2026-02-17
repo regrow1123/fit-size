@@ -131,25 +131,6 @@ export default function ClothingInputForm({ onSubmit, body }: Props) {
     return merged;
   }, [defaults, userMap]);
 
-  // 체형 수치 (비교용)
-  const bodyStats = useMemo(() => {
-    return estimateBodyDimensions(
-      body.gender, body.height, body.weight,
-      body.shoulderWidth, body.chestCirc, body.waistCirc, body.hipCirc,
-    );
-  }, [body]);
-
-  // 체형 수치를 cm Map으로
-  const bodyMap = useMemo(() => {
-    const m = new Map<string, number>();
-    m.set('shoulderWidth', bodyStats.shoulderWidth);
-    m.set('chestCirc', bodyStats.chestCirc);
-    m.set('waistCirc', bodyStats.waistCirc);
-    m.set('hipCirc', bodyStats.hipCirc);
-    m.set('neckCirc', bodyStats.neckCirc);
-    return m;
-  }, [bodyStats]);
-
   const handleSubmit = () => {
     onSubmit(finalMap, category);
   };
@@ -190,50 +171,26 @@ export default function ClothingInputForm({ onSubmit, body }: Props) {
         onDeleteMeasurement={handleDelete}
       />
 
-      {/* Comparison table */}
+      {/* Clothing dimensions table */}
       <div className="border border-gray-200 rounded-lg overflow-hidden">
         <table className="w-full text-sm">
           <thead>
             <tr className="bg-gray-50 text-gray-600">
               <th className="text-left px-3 py-2 font-medium">부위</th>
-              <th className="text-right px-3 py-2 font-medium">내 체형</th>
-              <th className="text-right px-3 py-2 font-medium">옷 치수</th>
-              <th className="text-right px-3 py-2 font-medium">차이</th>
+              <th className="text-right px-3 py-2 font-medium">치수 (cm)</th>
             </tr>
           </thead>
           <tbody>
             {keys.map(key => {
               const label = MEASUREMENT_LABELS[key] ?? key;
               const clothVal = finalMap.get(key);
-              const bodyVal = bodyMap.get(key);
               const userEntered = userMap.has(key);
-              const diff = (clothVal != null && bodyVal != null) ? clothVal - bodyVal : null;
-
-              let diffColor = 'text-gray-400';
-              let diffLabel = '';
-              if (diff !== null) {
-                if (diff > 3) { diffColor = 'text-yellow-600'; diffLabel = '여유'; }
-                else if (diff >= -1) { diffColor = 'text-green-600'; diffLabel = '적당'; }
-                else { diffColor = 'text-red-600'; diffLabel = '빡빡'; }
-              }
 
               return (
                 <tr key={key} className="border-t border-gray-100">
                   <td className="px-3 py-2 text-gray-700">{label}</td>
-                  <td className="px-3 py-2 text-right text-gray-400 font-mono">
-                    {bodyVal != null ? `${bodyVal.toFixed(0)}` : '—'}
-                  </td>
-                  <td className={`px-3 py-2 text-right font-mono font-semibold ${userEntered ? 'text-blue-600' : 'text-gray-500'}`}>
-                    {clothVal != null ? `${clothVal.toFixed(0)}` : '—'}
-                    {!userEntered && clothVal != null && <span className="text-xs text-gray-300 ml-1">추정</span>}
-                  </td>
-                  <td className={`px-3 py-2 text-right font-mono ${diffColor}`}>
-                    {diff !== null ? (
-                      <span>
-                        {diff > 0 ? '+' : ''}{diff.toFixed(0)}
-                        <span className="text-xs ml-1">{diffLabel}</span>
-                      </span>
-                    ) : '—'}
+                  <td className={`px-3 py-2 text-right font-mono font-semibold ${userEntered ? 'text-blue-600' : 'text-gray-400'}`}>
+                    {clothVal != null ? clothVal.toFixed(0) : '—'}
                   </td>
                 </tr>
               );
@@ -241,9 +198,6 @@ export default function ClothingInputForm({ onSubmit, body }: Props) {
           </tbody>
         </table>
       </div>
-      <p className="text-xs text-gray-400">
-        <span className="text-blue-500">파란색</span> = 직접 입력 · 회색 = 체형 기반 추정
-      </p>
 
       <button
         onClick={handleSubmit}
