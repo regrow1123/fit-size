@@ -21,7 +21,7 @@ export function calculateAvatarDimensions(body: BodyMeasurements): AvatarDimensi
 
   // 머리 크기: 키의 약 1/7.5
   const headRadius = (body.height / 7.5 / 2) * SCALE;
-  const neckWidth = (stats.neckCirc / Math.PI) * SCALE;
+  const neckWidth = (stats.neckCirc / 2) * SCALE;
   const neckHeight = 4 * scale;
 
   // 어깨
@@ -29,9 +29,9 @@ export function calculateAvatarDimensions(body: BodyMeasurements): AvatarDimensi
   const shoulderY = headRadius * 2 + neckHeight;
 
   // 가슴/허리 (둘레 → 정면 너비: 둘레 / π 근사)
-  const chestWidth = (stats.chestCirc / Math.PI) * SCALE;
+  const chestWidth = (stats.chestCirc / 2) * SCALE;
   const chestDepth = chestWidth * 0.7;
-  const waistWidth = (stats.waistCirc / Math.PI) * SCALE;
+  const waistWidth = (stats.waistCirc / 2) * SCALE;
 
   // 몸통
   const torsoHeight = stats.torsoLength * SCALE;
@@ -41,7 +41,7 @@ export function calculateAvatarDimensions(body: BodyMeasurements): AvatarDimensi
   const armWidth = 8 * scale;
 
   // 엉덩이
-  const hipWidth = (stats.hipCirc / Math.PI) * SCALE;
+  const hipWidth = (stats.hipCirc / 2) * SCALE;
 
   // 다리: 전체에서 상체 빼기
   const totalHeight = body.height * SCALE;

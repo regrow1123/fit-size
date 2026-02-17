@@ -38,18 +38,18 @@ interface MappingRule {
 
 const TOP_RULES: MappingRule[] = [
   { starts: ['shoulder_end_left'], ends: ['shoulder_end_right'], bodyPart: 'shoulderWidth', isCircumference: false },
-  { starts: ['chest_left'], ends: ['chest_right'], bodyPart: 'chestCirc', isCircumference: true, transform: v => v * Math.PI },
-  { starts: ['waist_left'], ends: ['waist_right'], bodyPart: 'waistCirc', isCircumference: true, transform: v => v * Math.PI },
+  { starts: ['chest_left'], ends: ['chest_right'], bodyPart: 'chestCirc', isCircumference: true, transform: v => v * 2 },
+  { starts: ['waist_left'], ends: ['waist_right'], bodyPart: 'waistCirc', isCircumference: true, transform: v => v * 2 },
 ];
 
 const PANTS_RULES: MappingRule[] = [
-  { starts: ['waist_left'], ends: ['waist_right'], bodyPart: 'waistCirc', isCircumference: true, transform: v => v * Math.PI },
-  { starts: ['hip_left'], ends: ['hip_right'], bodyPart: 'hipCirc', isCircumference: true, transform: v => v * Math.PI },
+  { starts: ['waist_left'], ends: ['waist_right'], bodyPart: 'waistCirc', isCircumference: true, transform: v => v * 2 },
+  { starts: ['hip_left'], ends: ['hip_right'], bodyPart: 'hipCirc', isCircumference: true, transform: v => v * 2 },
 ];
 
 const DRESS_RULES: MappingRule[] = [
   ...TOP_RULES,
-  { starts: ['hip_left'], ends: ['hip_right'], bodyPart: 'hipCirc', isCircumference: true, transform: v => v * Math.PI },
+  { starts: ['hip_left'], ends: ['hip_right'], bodyPart: 'hipCirc', isCircumference: true, transform: v => v * 2 },
 ];
 
 function getRules(category: ClothingCategory): MappingRule[] {

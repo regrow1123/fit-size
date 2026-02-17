@@ -14,28 +14,28 @@ export function calculateClothingDimensions(
   const base: ClothingDimensions = {
     category,
     shoulderWidth: toPx(measurements.get('shoulderWidth') ?? 45),
-    chestWidth: toPx((measurements.get('chestCirc') ?? 100) / Math.PI),
+    chestWidth: toPx((measurements.get('chestCirc') ?? 100) / 2),
     totalLength: toPx(measurements.get('totalLength') ?? 70),
     sleeveLength: toPx(measurements.get('sleeveLength') ?? 22),
-    sleeveWidth: toPx((measurements.get('sleeveCirc') ?? 36) / Math.PI),
-    hemWidth: toPx((measurements.get('hemCirc') ?? 100) / Math.PI),
+    sleeveWidth: toPx((measurements.get('sleeveCirc') ?? 36) / 2),
+    hemWidth: toPx((measurements.get('hemCirc') ?? 100) / 2),
   };
 
   if (category === 'pants') {
-    base.waistWidth = toPx((measurements.get('waistCirc') ?? 80) / Math.PI);
-    base.hipWidth = toPx((measurements.get('hipCirc') ?? 96) / Math.PI);
-    base.thighWidth = toPx((measurements.get('thighCirc') ?? 56) / Math.PI);
-    base.kneeWidth = toPx((measurements.get('kneeCirc') ?? 40) / Math.PI);
+    base.waistWidth = toPx((measurements.get('waistCirc') ?? 80) / 2);
+    base.hipWidth = toPx((measurements.get('hipCirc') ?? 96) / 2);
+    base.thighWidth = toPx((measurements.get('thighCirc') ?? 56) / 2);
+    base.kneeWidth = toPx((measurements.get('kneeCirc') ?? 40) / 2);
     base.inseam = toPx(measurements.get('inseam') ?? 76);
     base.rise = toPx(measurements.get('rise') ?? 26);
-    base.hemWidth = toPx((measurements.get('hemCirc') ?? 36) / Math.PI);
+    base.hemWidth = toPx((measurements.get('hemCirc') ?? 36) / 2);
     base.totalLength = toPx(measurements.get('totalLength') ?? 100);
   }
 
   if (category === 'long_sleeve' || category === 'jacket') {
     base.sleeveLength = toPx(measurements.get('sleeveLength') ?? 58);
-    base.elbowWidth = toPx((measurements.get('elbowCirc') ?? 30) / Math.PI);
-    base.cuffWidth = toPx((measurements.get('cuffCirc') ?? 24) / Math.PI);
+    base.elbowWidth = toPx((measurements.get('elbowCirc') ?? 30) / 2);
+    base.cuffWidth = toPx((measurements.get('cuffCirc') ?? 24) / 2);
   }
 
   if (category === 'jacket') {
@@ -45,7 +45,7 @@ export function calculateClothingDimensions(
 
   if (category === 'dress') {
     base.totalLength = toPx(measurements.get('totalLength') ?? 100);
-    base.hipWidth = toPx((measurements.get('hipCirc') ?? 96) / Math.PI);
+    base.hipWidth = toPx((measurements.get('hipCirc') ?? 96) / 2);
   }
 
   return base;
@@ -281,21 +281,21 @@ export function pointMeasurementsToMap(measurements: PointMeasurement[], categor
     { starts: ['shoulder_end_left'], ends: ['shoulder_end_right'], key: 'shoulderWidth' },
     { starts: ['neck_back_center', 'below_back_neck'], ends: ['hem_center', 'hem_left', 'hem_right'], key: 'totalLength' },
     { starts: ['shoulder_end_left', 'shoulder_end_right', 'shoulder_seam_left', 'shoulder_seam_right'], ends: ['sleeve_end_left', 'sleeve_end_right', 'cuff_left', 'cuff_right'], key: 'sleeveLength' },
-    { starts: ['chest_left'], ends: ['chest_right'], key: 'chestCirc', transform: v => v * Math.PI },
-    { starts: ['waist_left'], ends: ['waist_right'], key: 'waistCirc', transform: v => v * Math.PI },
-    { starts: ['hem_left'], ends: ['hem_right'], key: 'hemCirc', transform: v => v * Math.PI },
-    { starts: ['armpit_left', 'armpit_right'], ends: ['sleeve_end_left', 'sleeve_end_right', 'cuff_left', 'cuff_right'], key: 'sleeveCirc', transform: v => v * Math.PI },
-    { starts: ['elbow_left'], ends: ['elbow_right'], key: 'elbowCirc', transform: v => v * Math.PI },
-    { starts: ['cuff_left', 'cuff_inner_left'], ends: ['cuff_right', 'cuff_inner_right'], key: 'cuffCirc', transform: v => v * Math.PI },
+    { starts: ['chest_left'], ends: ['chest_right'], key: 'chestCirc', transform: v => v * 2 },
+    { starts: ['waist_left'], ends: ['waist_right'], key: 'waistCirc', transform: v => v * 2 },
+    { starts: ['hem_left'], ends: ['hem_right'], key: 'hemCirc', transform: v => v * 2 },
+    { starts: ['armpit_left', 'armpit_right'], ends: ['sleeve_end_left', 'sleeve_end_right', 'cuff_left', 'cuff_right'], key: 'sleeveCirc', transform: v => v * 2 },
+    { starts: ['elbow_left'], ends: ['elbow_right'], key: 'elbowCirc', transform: v => v * 2 },
+    { starts: ['cuff_left', 'cuff_inner_left'], ends: ['cuff_right', 'cuff_inner_right'], key: 'cuffCirc', transform: v => v * 2 },
   ];
 
   const pantsRules: Rule[] = [
-    { starts: ['waist_left'], ends: ['waist_right'], key: 'waistCirc', transform: v => v * Math.PI },
-    { starts: ['hip_left'], ends: ['hip_right'], key: 'hipCirc', transform: v => v * Math.PI },
-    { starts: ['thigh_left'], ends: ['thigh_right'], key: 'thighCirc', transform: v => v * Math.PI },
-    { starts: ['knee_left'], ends: ['knee_right'], key: 'kneeCirc', transform: v => v * Math.PI },
-    { starts: ['hem_left_outer'], ends: ['hem_left_inner'], key: 'hemCirc', transform: v => v * Math.PI },
-    { starts: ['hem_right_outer'], ends: ['hem_right_inner'], key: 'hemCirc', transform: v => v * Math.PI },
+    { starts: ['waist_left'], ends: ['waist_right'], key: 'waistCirc', transform: v => v * 2 },
+    { starts: ['hip_left'], ends: ['hip_right'], key: 'hipCirc', transform: v => v * 2 },
+    { starts: ['thigh_left'], ends: ['thigh_right'], key: 'thighCirc', transform: v => v * 2 },
+    { starts: ['knee_left'], ends: ['knee_right'], key: 'kneeCirc', transform: v => v * 2 },
+    { starts: ['hem_left_outer'], ends: ['hem_left_inner'], key: 'hemCirc', transform: v => v * 2 },
+    { starts: ['hem_right_outer'], ends: ['hem_right_inner'], key: 'hemCirc', transform: v => v * 2 },
     { starts: ['rise_top', 'waist_center'], ends: ['crotch', 'inseam_top'], key: 'rise' },
     { starts: ['inseam_top', 'crotch'], ends: ['inseam_bottom_left', 'hem_left_inner', 'hem_right_inner'], key: 'inseam' },
     { starts: ['outseam_top_left', 'waist_left'], ends: ['outseam_bottom_left', 'hem_left_outer', 'hem_right_outer'], key: 'totalLength' },
@@ -303,9 +303,9 @@ export function pointMeasurementsToMap(measurements: PointMeasurement[], categor
 
   const dressRules: Rule[] = [
     ...topRules,
-    { starts: ['hip_left'], ends: ['hip_right'], key: 'hipCirc', transform: v => v * Math.PI },
+    { starts: ['hip_left'], ends: ['hip_right'], key: 'hipCirc', transform: v => v * 2 },
     { starts: ['neck_back_center', 'below_back_neck'], ends: ['skirt_hem_center', 'skirt_hem_left', 'skirt_hem_right'], key: 'totalLength' },
-    { starts: ['skirt_hem_left'], ends: ['skirt_hem_right'], key: 'hemCirc', transform: v => v * Math.PI },
+    { starts: ['skirt_hem_left'], ends: ['skirt_hem_right'], key: 'hemCirc', transform: v => v * 2 },
   ];
 
   let rules: Rule[];
