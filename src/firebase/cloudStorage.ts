@@ -12,7 +12,7 @@ import { loadWardrobe, type WardrobeData, type SavedGarment, type SavedBodyProfi
 
 /** Firestore에 옷장 데이터 저장 */
 export async function saveToCloud(user: User): Promise<void> {
-  if (!isFirebaseConfigured) return;
+  if (!isFirebaseConfigured || !db) return;
   const data = loadWardrobe();
   const ref = doc(db, 'users', user.uid, 'data', 'wardrobe');
   await setDoc(ref, {
@@ -24,7 +24,7 @@ export async function saveToCloud(user: User): Promise<void> {
 
 /** Firestore에서 옷장 데이터 로드 */
 export async function loadFromCloud(user: User): Promise<WardrobeData | null> {
-  if (!isFirebaseConfigured) return null;
+  if (!isFirebaseConfigured || !db) return null;
   const ref = doc(db, 'users', user.uid, 'data', 'wardrobe');
   const snap = await getDoc(ref);
   if (!snap.exists()) return null;
