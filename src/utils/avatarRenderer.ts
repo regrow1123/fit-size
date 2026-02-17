@@ -41,47 +41,125 @@ export function drawAvatar(
   // 1. ARMS (뒤에 먼저)
   // ════════════════════════════════════════
   for (const s of [-1, 1]) {
+    // 어깨 끝점
     const sx = cx + s * shH;
-    // 팔 각도: 자연스럽게 살짝 벌어짐
-    const elX = sx + s * 14;
-    const wrX = sx + s * 20;
-    const handX = wrX + s * 2;
-    const handEndY = d.wristY + d.upperArmWidth * 2.5;
+    // 겨드랑이 (팔 내측 시작점 — 가슴 높이, 가슴 폭 위치)
+    const axillaX = cx + s * chH;
+    const axillaY = d.chestY;
+
+    // 팔 중심선: 살짝 바깥으로 벌어짐
+    const elX = sx + s * 12;
+    const wrX = sx + s * 18;
 
     const upH = d.upperArmWidth / 2;
     const elH = d.elbowWidth / 2;
     const faH = d.forearmWidth / 2;
     const wrH = d.wristWidth / 2;
 
+    // 삼두근 볼륨 포인트 (상완 중간, 외측으로 볼록)
+    const midArmY = d.shoulderY + (d.elbowY - d.shoulderY) * 0.4;
+    const midArmX = sx + s * (12 * 0.4); // 팔 중심선 중간
+    const bicepBulge = upH * 1.2; // 이두근/삼두근 볼륨
+
     ctx.beginPath();
-    // 외측: 어깨 → 팔꿈치 → 손목
-    ctx.moveTo(sx + s * upH, d.shoulderY + 2);
+
+    // ── 외측 (삼각근 → 삼두근 → 팔꿈치 → 전완 → 손목) ──
+    // 삼각근: 어깨 위에서 시작, 둥근 어깨캡
+    ctx.moveTo(sx + s * upH * 0.5, d.shoulderY - 2);
+    // 어깨 캡 (삼각근 볼록)
     ctx.bezierCurveTo(
-      sx + s * upH * 1.1, d.shoulderY + (d.elbowY - d.shoulderY) * 0.35,
-      elX + s * elH * 1.05, d.elbowY - (d.elbowY - d.shoulderY) * 0.1,
+      sx + s * (upH * 1.3), d.shoulderY + 4,
+      sx + s * (upH * 1.35), d.shoulderY + (midArmY - d.shoulderY) * 0.4,
+      midArmX + s * bicepBulge, midArmY,
+    );
+    // 상완 → 팔꿈치 (살짝 테이퍼)
+    ctx.bezierCurveTo(
+      midArmX + s * bicepBulge * 0.9, midArmY + (d.elbowY - midArmY) * 0.5,
+      elX + s * elH * 1.1, d.elbowY - (d.elbowY - midArmY) * 0.2,
       elX + s * elH, d.elbowY,
     );
+    // 전완: 팔꿈치 → 손목 (점진적 테이퍼)
     ctx.bezierCurveTo(
-      elX + s * faH, d.elbowY + (d.wristY - d.elbowY) * 0.15,
-      wrX + s * wrH * 1.1, d.wristY - (d.wristY - d.elbowY) * 0.15,
+      elX + s * faH * 1.05, d.elbowY + (d.wristY - d.elbowY) * 0.2,
+      wrX + s * wrH * 1.15, d.wristY - (d.wristY - d.elbowY) * 0.2,
       wrX + s * wrH, d.wristY,
     );
-    // 손 (단순 라운드)
-    const hW = wrH * 1.5;
-    ctx.quadraticCurveTo(handX + s * hW, d.wristY + 5, handX + s * hW * 0.6, handEndY);
-    ctx.quadraticCurveTo(handX, handEndY + 3, handX - s * hW * 0.3, handEndY - 3);
-    ctx.quadraticCurveTo(wrX - s * wrH * 0.3, d.wristY + 4, wrX - s * wrH, d.wristY);
-    // 내측: 손목 → 팔꿈치 → 어깨
+
+    // ── 손 ──
+    const handW = wrH * 1.6;
+    const handLen = d.upperArmWidth * 1.2;
+    const handEndY = d.wristY + handLen;
+    const palmEndY = d.wristY + handLen * 0.6;
+    const fingerTipY = handEndY;
+
+    // 손목 → 손바닥 외측
     ctx.bezierCurveTo(
-      wrX - s * wrH * 1.1, d.wristY - (d.wristY - d.elbowY) * 0.15,
-      elX - s * faH * 0.7, d.elbowY + (d.wristY - d.elbowY) * 0.15,
-      elX - s * elH * 0.65, d.elbowY,
+      wrX + s * handW, d.wristY + 3,
+      wrX + s * handW * 1.05, palmEndY - 5,
+      wrX + s * handW * 0.95, palmEndY,
     );
+    // 손가락들 (4개 — 살짝 구분)
+    const fingerW = handW * 0.85;
+    for (let f = 0; f < 4; f++) {
+      const t = f / 3; // 0~1
+      const fx = wrX + s * (fingerW * (1 - t * 0.6));
+      const tipY = fingerTipY - f * 1.5; // 중지가 가장 긺
+      if (f === 0) {
+        ctx.lineTo(fx, tipY);
+      } else {
+        const prevFx = wrX + s * (fingerW * (1 - (f - 1) / 3 * 0.6));
+        ctx.quadraticCurveTo((fx + prevFx) / 2, palmEndY + 2, fx, tipY);
+      }
+      // 손가락 끝 라운드
+      ctx.quadraticCurveTo(
+        fx - s * handW * 0.06, tipY + 2,
+        fx - s * handW * 0.12, tipY - 1,
+      );
+    }
+    // 손바닥 내측으로 돌아옴
+    ctx.quadraticCurveTo(
+      wrX - s * handW * 0.15, palmEndY + 3,
+      wrX - s * handW * 0.2, palmEndY - 2,
+    );
+    // 엄지 (내측, 짧고 옆으로)
+    const thumbY = d.wristY + handLen * 0.2;
+    ctx.quadraticCurveTo(
+      wrX - s * handW * 0.4, thumbY + 8,
+      wrX - s * handW * 0.5, thumbY + 3,
+    );
+    ctx.quadraticCurveTo(
+      wrX - s * handW * 0.45, thumbY - 3,
+      wrX - s * wrH * 0.8, d.wristY + 2,
+    );
+
+    // ── 내측 (손목 → 전완 → 팔꿈치 → 겨드랑이) ──
+    // 손목에서 올라감
+    ctx.lineTo(wrX - s * wrH, d.wristY);
+    // 전완 내측 (약간 볼록 — 전완 근육)
     ctx.bezierCurveTo(
-      elX - s * elH * 0.6, d.elbowY - (d.elbowY - d.shoulderY) * 0.1,
-      sx - s * upH * 0.05, d.shoulderY + (d.elbowY - d.shoulderY) * 0.2,
-      sx - s * 2, d.shoulderY + 4,
+      wrX - s * wrH * 1.1, d.wristY - (d.wristY - d.elbowY) * 0.2,
+      elX - s * faH * 0.85, d.elbowY + (d.wristY - d.elbowY) * 0.2,
+      elX - s * elH * 0.6, d.elbowY,
     );
+    // 팔꿈치 → 상완 내측 (이두근 볼록)
+    const innerBicep = upH * 0.9;
+    ctx.bezierCurveTo(
+      elX - s * elH * 0.55, d.elbowY - (d.elbowY - midArmY) * 0.2,
+      midArmX - s * innerBicep * 0.85, midArmY + (d.elbowY - midArmY) * 0.3,
+      midArmX - s * innerBicep, midArmY,
+    );
+    // 상완 내측 → 겨드랑이
+    ctx.bezierCurveTo(
+      midArmX - s * innerBicep * 0.9, midArmY - (midArmY - d.shoulderY) * 0.4,
+      axillaX + s * 2, axillaY + 5,
+      axillaX, axillaY,
+    );
+    // 겨드랑이 → 어깨 내측 (어깨 위로 올라감)
+    ctx.quadraticCurveTo(
+      axillaX + s * (shH - chH) * 0.3, d.shoulderY + 8,
+      sx + s * upH * 0.5, d.shoulderY - 2,
+    );
+
     ctx.closePath();
     ctx.fill();
     ctx.stroke();
