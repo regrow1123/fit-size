@@ -11,12 +11,12 @@ import {
 } from '../utils/reverseEstimator';
 import { estimateBodyDimensions } from '../data/bodyStats';
 import {
-  loadWardrobe,
   saveGarment as persistGarment,
   updateGarmentName,
   deleteGarment as removeGarmentFromStorage,
   clearAllGarments,
   saveProfile,
+  loadWardrobe,
 } from '../utils/storage';
 import { parseSizeChart, sizeRowToReverseMeasurements, type ParsedSizeChart } from '../utils/sizeChartParser';
 import { useTranslation } from '../i18n';
@@ -66,7 +66,7 @@ export default function ReverseInputForm({ onSubmit }: Props) {
   const [parseError, setParseError] = useState(false);
   const [appliedSize, setAppliedSize] = useState<string | null>(null);
 
-  // Load from localStorage on mount
+  // Load from in-memory store on mount (populated by cloud sync or import)
   useEffect(() => {
     const data = loadWardrobe();
     if (data.garments.length > 0) {

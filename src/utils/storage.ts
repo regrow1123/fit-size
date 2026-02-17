@@ -5,10 +5,10 @@ import type { ReverseMeasurement } from './reverseEstimator';
 
 export interface SavedGarment {
   id: string;
-  name: string; // user-given label
+  name: string;
   category: ClothingCategory;
   measurements: ReverseMeasurement[];
-  savedAt: number; // timestamp
+  savedAt: number;
 }
 
 export interface SavedBodyProfile {
@@ -25,91 +25,72 @@ export interface WardrobeData {
   profile: SavedBodyProfile | null;
 }
 
-// ─── Keys ───
+// ─── In-memory store ───
+// 세션 중에만 유지. 영속성은 Firebase 또는 텍스트 내보내기/불러오기로.
 
-const STORAGE_KEY = 'fitsize-wardrobe';
+let store: WardrobeData = { version: 1, garments: [], profile: null };
 
-// ─── Helpers ───
-
-function getStorage(): WardrobeData {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return { version: 1, garments: [], profile: null };
-    const data = JSON.parse(raw) as WardrobeData;
-    if (data.version !== 1) return { version: 1, garments: [], profile: null };
-    return data;
-  } catch {
-    return { version: 1, garments: [], profile: null };
-  }
+/** 변경 리스너 (App에서 re-render 트리거용) */
+type Listener = () => void;
+const listeners: Set<Listener> = new Set();
+export function subscribe(fn: Listener): () => void {
+  listeners.add(fn);
+  return () => listeners.delete(fn);
 }
-
-function setStorage(data: WardrobeData): void {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-  } catch {
-    // storage full or unavailable — silently fail
-  }
+function notify() {
+  listeners.forEach(fn => fn());
 }
 
 // ─── Public API ───
 
 export function loadWardrobe(): WardrobeData {
-  return getStorage();
+  return store;
 }
 
 export function hasStoredProfile(): boolean {
-  const data = getStorage();
-  return data.profile !== null || data.garments.length > 0;
+  return store.profile !== null;
 }
 
 export function saveGarment(garment: SavedGarment): void {
-  const data = getStorage();
-  data.garments.push(garment);
-  setStorage(data);
+  store.garments.push(garment);
+  notify();
 }
 
 export function updateGarmentName(id: string, name: string): void {
-  const data = getStorage();
-  const g = data.garments.find(g => g.id === id);
-  if (g) { g.name = name; setStorage(data); }
+  const g = store.garments.find(g => g.id === id);
+  if (g) { g.name = name; notify(); }
 }
 
 export function deleteGarment(id: string): void {
-  const data = getStorage();
-  data.garments = data.garments.filter(g => g.id !== id);
-  setStorage(data);
+  store.garments = store.garments.filter(g => g.id !== id);
+  notify();
 }
 
 export function clearAllGarments(): void {
-  const data = getStorage();
-  data.garments = [];
-  setStorage(data);
+  store.garments = [];
+  notify();
 }
 
 export function saveProfile(profile: SavedBodyProfile): void {
-  const data = getStorage();
-  data.profile = profile;
-  setStorage(data);
+  store.profile = profile;
+  notify();
 }
 
 export function clearAll(): void {
-  localStorage.removeItem(STORAGE_KEY);
+  store = { version: 1, garments: [], profile: null };
+  notify();
 }
 
-// ─── Export / Import ───
+/** 전체 데이터를 한번에 로드 (Firebase/텍스트 불러오기용) */
+export function loadWardrobeData(data: WardrobeData): void {
+  store = { ...data, version: 1 };
+  notify();
+}
 
-export function exportWardrobe(): void {
-  const data = getStorage();
-  const json = JSON.stringify(data, null, 2);
-  const blob = new Blob([json], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `fitsize-backup-${new Date().toISOString().slice(0, 10)}.json`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+// ─── Text Export / Import ───
+
+export function exportWardrobeText(): string {
+  return JSON.stringify(store);
 }
 
 export function importWardrobeFromText(text: string): { garments: number; hasProfile: boolean } {
@@ -117,27 +98,6 @@ export function importWardrobeFromText(text: string): { garments: number; hasPro
   if (data.version !== 1 || !Array.isArray(data.garments)) {
     throw new Error('잘못된 데이터 형식입니다.');
   }
-  setStorage(data);
+  loadWardrobeData(data);
   return { garments: data.garments.length, hasProfile: data.profile !== null };
-}
-
-export function importWardrobe(file: File): Promise<{ garments: number; hasProfile: boolean }> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      try {
-        const data = JSON.parse(reader.result as string) as WardrobeData;
-        if (data.version !== 1 || !Array.isArray(data.garments)) {
-          reject(new Error('잘못된 파일 형식입니다.'));
-          return;
-        }
-        setStorage(data);
-        resolve({ garments: data.garments.length, hasProfile: data.profile !== null });
-      } catch {
-        reject(new Error('JSON 파싱에 실패했습니다.'));
-      }
-    };
-    reader.onerror = () => reject(new Error('파일을 읽을 수 없습니다.'));
-    reader.readAsText(file);
-  });
 }

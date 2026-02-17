@@ -4,10 +4,9 @@ import ClothingInputForm from './components/ClothingInputForm';
 import FittingCanvas from './components/FittingCanvas';
 import ReverseInputForm from './components/ReverseInputForm';
 import ProductRecommendations from './components/ProductRecommendations';
-import { hasStoredProfile, loadWardrobe, importWardrobeFromText } from './utils/storage';
-import { estimateBodyFromGarments, estimatesToBodyMeasurements } from './utils/reverseEstimator';
+import { importWardrobeFromText, exportWardrobeText, subscribe } from './utils/storage';
 import { useTranslation, type Locale } from './i18n';
-import { useAuth, saveToCloud, loadFromCloud, migrateLocalToCloud, syncToLocal } from './firebase';
+import { useAuth, saveToCloud, loadFromCloud } from './firebase';
 
 type Step = 'body' | 'clothing' | 'result';
 
@@ -99,55 +98,29 @@ function StepIndicator({
 export default function App() {
   const { t, locale, setLocale } = useTranslation();
   const { user, loading: authLoading, signInWithGoogle, signOut, isConfigured: authConfigured } = useAuth();
-  const [cloudSynced, setCloudSynced] = useState(false);
+  const [cloudLoaded, setCloudLoaded] = useState(false);
   const [step, setStep] = useState<Step>('body');
   const [body, setBody] = useState<BodyMeasurements | null>(null);
   const [clothing, setClothing] = useState<Map<string, number> | null>(null);
   const [category, setCategory] = useState<ClothingCategory>('tshirt');
-  const [showWelcomeBack, setShowWelcomeBack] = useState(false);
   const [importMsg, setImportMsg] = useState<string | null>(null);
   const [showExportText, setShowExportText] = useState(false);
   const [showImportText, setShowImportText] = useState(false);
   const [importTextValue, setImportTextValue] = useState('');
+  // Force re-render when in-memory store changes
+  const [, setTick] = useState(0);
 
-  useEffect(() => {
-    if (hasStoredProfile()) {
-      setShowWelcomeBack(true);
-    }
-  }, []);
+  // Subscribe to in-memory store changes
+  useEffect(() => subscribe(() => setTick(t => t + 1)), []);
 
-  // 로그인 시 클라우드 동기화
+  // 로그인 시 클라우드에서 로드
   useEffect(() => {
-    if (!user || cloudSynced) return;
+    if (!user || cloudLoaded) return;
     (async () => {
-      // 1. 로컬 → 클라우드 마이그레이션 시도
-      const migrated = await migrateLocalToCloud(user);
-      if (!migrated) {
-        // 2. 클라우드 → 로컬 동기화
-        const cloudData = await loadFromCloud(user);
-        if (cloudData && cloudData.garments.length > 0) {
-          syncToLocal(cloudData);
-          setShowWelcomeBack(true);
-        }
-      }
-      setCloudSynced(true);
+      await loadFromCloud(user);
+      setCloudLoaded(true);
     })();
-  }, [user, cloudSynced]);
-
-  const handleLoadProfileDirect = () => {
-    const data = loadWardrobe();
-    if (data.profile?.bodyMeasurements) {
-      setBody(data.profile.bodyMeasurements);
-      setStep('clothing');
-    } else if (data.garments.length > 0 && data.profile) {
-      const garments = data.garments.map(g => ({ id: g.id, category: g.category, measurements: g.measurements }));
-      const estimates = estimateBodyFromGarments(garments);
-      const bodyM = estimatesToBodyMeasurements(estimates, data.profile.gender, data.profile.height, data.profile.weight);
-      setBody(bodyM);
-      setStep('clothing');
-    }
-    setShowWelcomeBack(false);
-  };
+  }, [user, cloudLoaded]);
 
   const handleBodySubmit = (b: BodyMeasurements) => {
     setBody(b);
@@ -224,28 +197,6 @@ export default function App() {
       </header>
 
       <main className="max-w-4xl mx-auto px-4 py-4 sm:py-8">
-        {/* Welcome back banner */}
-        {showWelcomeBack && step === 'body' && (
-          <div className="mb-6 bg-gradient-to-r from-green-50 to-blue-50 border border-green-300 rounded-xl p-5 shadow-sm">
-            <h2 className="text-lg font-bold text-green-800 mb-1">{t('app.welcome.title')}</h2>
-            <p className="text-sm text-green-700 mb-3">{t('app.welcome.desc')}</p>
-            <div className="flex gap-2">
-              <button
-                onClick={handleLoadProfileDirect}
-                className="bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-green-700 cursor-pointer transition"
-              >
-                {t('app.welcome.loadProfile')}
-              </button>
-              <button
-                onClick={() => setShowWelcomeBack(false)}
-                className="border border-green-400 text-green-700 px-4 py-2 rounded-lg text-sm hover:bg-green-50 cursor-pointer transition"
-              >
-                {t('app.welcome.resetBody')}
-              </button>
-            </div>
-          </div>
-        )}
-
         {/* Step indicator */}
         <StepIndicator step={step} body={body} clothing={clothing} onStepClick={setStep} />
 
@@ -257,13 +208,13 @@ export default function App() {
 
                 {/* Cloud sync status / Export / Import */}
                 <div className="mt-6 pt-4 border-t border-gray-200">
-                  {user ? (
-                    <p className="text-sm text-green-600 text-center mb-3">☁️ {t('auth.cloudSynced')}</p>
-                  ) : (
-                    <p className="text-sm text-gray-500 text-center mb-3">
-                      {authConfigured ? t('auth.loginPrompt') : t('app.importPrompt')}
-                    </p>
-                  )}
+                  <p className="text-sm text-gray-500 text-center mb-3">
+                    {user
+                      ? `☁️ ${t('auth.cloudSynced')}`
+                      : authConfigured
+                        ? t('auth.loginPrompt')
+                        : t('app.importPrompt')}
+                  </p>
                   <div className="flex gap-3 justify-center">
                     <button
                       onClick={() => { setShowExportText(!showExportText); setShowImportText(false); }}
@@ -284,7 +235,7 @@ export default function App() {
                       <p className="text-xs text-gray-500">{t('app.exportCopyGuide')}</p>
                       <textarea
                         readOnly
-                        value={JSON.stringify(loadWardrobe())}
+                        value={exportWardrobeText()}
                         onFocus={e => e.target.select()}
                         className="w-full border rounded-lg px-3 py-2 text-xs font-mono h-24 resize-none bg-gray-50"
                       />
@@ -308,7 +259,6 @@ export default function App() {
                               garments: result.garments,
                               profile: result.hasProfile ? t('app.importProfileIncluded') : '',
                             }));
-                            setShowWelcomeBack(true);
                             setShowImportText(false);
                             setImportTextValue('');
                           } catch (err: unknown) {
