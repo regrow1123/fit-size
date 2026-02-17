@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo, useEffect } from 'react';
+import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import ClothingSketch from './ClothingSketch';
 import type { ClothingCategory, PointMeasurement, BodyMeasurements } from '../types';
 import { CLOTHING_CATEGORIES } from '../data/anchorPoints';
@@ -85,6 +85,14 @@ export default function ReverseInputForm({ onSubmit }: Props) {
       setWeight(data.profile.weight);
     }
   }, []);
+
+  // 키/몸무게/성별 변경 시 자동 저장
+  const profileLoaded = useRef(false);
+  useEffect(() => {
+    // 초기 로드(loadWardrobe → setState) 시에는 스킵
+    if (!profileLoaded.current) { profileLoaded.current = true; return; }
+    saveProfile({ gender, height, weight, updatedAt: Date.now() });
+  }, [gender, height, weight]);
 
   const allGarments = useMemo(() => {
     if (currentReverseMeasurements.length > 0) {
