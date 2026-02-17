@@ -203,7 +203,8 @@ export default function ReverseInputForm({ onSubmit }: Props) {
     onSubmit(body);
   };
 
-  const hasEstimates = Object.keys(estimates).length > 0 || directShoulder || directChest || directWaist || directHip;
+  // Always allow submit — Size Korea stats provide baseline from height/weight alone
+  const hasEstimates = true;
 
   /** Translate anchor point label by its ID */
   const tAnchor = (pointId: string, fallbackLabel: string) => {
