@@ -40,7 +40,7 @@ export function drawAvatar(
   // ════════════════════════════════════════
   // 1. ARMS (뒤에 먼저)
   // ════════════════════════════════════════
-  const ARM_ANGLE = 20 * Math.PI / 180; // 팔 벌림 각도
+  const ARM_ANGLE = 15 * Math.PI / 180; // 팔 벌림 각도
   const sinA = Math.sin(ARM_ANGLE);
   const cosA = Math.cos(ARM_ANGLE);
 
