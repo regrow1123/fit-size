@@ -92,7 +92,7 @@ const ja: TranslationDict = {
 
   // Measurement labels
   'measure.shoulderWidth': '肩幅',
-  'measure.chestCirc': '胸囲',
+  'measure.chestWidth': '胸幅（平置き）',
   'measure.waistCirc': 'ウエスト',
   'measure.hipCirc': 'ヒップ',
   'measure.hemCirc': '裾周り',

@@ -92,7 +92,7 @@ const ko: TranslationDict = {
 
   // Measurement labels
   'measure.shoulderWidth': '어깨너비',
-  'measure.chestCirc': '가슴둘레',
+  'measure.chestWidth': '가슴단면',
   'measure.waistCirc': '허리둘레',
   'measure.hipCirc': '엉덩이둘레',
   'measure.hemCirc': '밑단둘레',

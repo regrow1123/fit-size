@@ -14,7 +14,7 @@ export function calculateClothingDimensions(
   const base: ClothingDimensions = {
     category,
     shoulderWidth: toPx(measurements.get('shoulderWidth') ?? 45),
-    chestWidth: toPx((measurements.get('chestCirc') ?? 100) / 2),
+    chestWidth: toPx(measurements.get('chestWidth') ?? 50),
     totalLength: toPx(measurements.get('totalLength') ?? 70),
     sleeveLength: toPx(measurements.get('sleeveLength') ?? 22),
     sleeveWidth: toPx((measurements.get('sleeveCirc') ?? 36) / 2),
@@ -444,7 +444,7 @@ export function pointMeasurementsToMap(measurements: PointMeasurement[], categor
     { starts: ['shoulder_end_left'], ends: ['shoulder_end_right'], key: 'shoulderWidth' },
     { starts: ['neck_back_center', 'below_back_neck'], ends: ['hem_center', 'hem_left', 'hem_right'], key: 'totalLength' },
     { starts: ['shoulder_end_left', 'shoulder_end_right', 'shoulder_seam_left', 'shoulder_seam_right'], ends: ['sleeve_end_left', 'sleeve_end_right', 'cuff_left', 'cuff_right'], key: 'sleeveLength' },
-    { starts: ['chest_left'], ends: ['chest_right'], key: 'chestCirc', transform: v => v * 2 },
+    { starts: ['chest_left'], ends: ['chest_right'], key: 'chestWidth' },
     { starts: ['waist_left'], ends: ['waist_right'], key: 'waistCirc', transform: v => v * 2 },
     { starts: ['hem_left'], ends: ['hem_right'], key: 'hemCirc', transform: v => v * 2 },
     { starts: ['armpit_left', 'armpit_right'], ends: ['sleeve_end_left', 'sleeve_end_right', 'cuff_left', 'cuff_right'], key: 'sleeveCirc', transform: v => v * 2 },

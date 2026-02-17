@@ -24,7 +24,7 @@ function generateBodyDefaults(body: BodyMeasurements, category: ClothingCategory
 
   if (category === 'tshirt' || category === 'long_sleeve' || category === 'jacket' || category === 'dress') {
     map.set('shoulderWidth', stats.shoulderWidth + EASE.shoulder);
-    map.set('chestCirc', stats.chestCirc + EASE.circ);
+    map.set('chestWidth', (stats.chestCirc + EASE.circ) / 2);
     map.set('hemCirc', stats.waistCirc + EASE.hem);
     map.set('totalLength', stats.torsoLength + 25);
 
@@ -38,7 +38,7 @@ function generateBodyDefaults(body: BodyMeasurements, category: ClothingCategory
       map.set('cuffCirc', 24);
     } else if (category === 'jacket') {
       map.set('shoulderWidth', stats.shoulderWidth + 3);
-      map.set('chestCirc', stats.chestCirc + 12);
+      map.set('chestWidth', (stats.chestCirc + 12) / 2);
       map.set('sleeveLength', stats.armLength + 2);
       map.set('sleeveCirc', 38);
       map.set('elbowCirc', 34);
@@ -70,7 +70,7 @@ function generateBodyDefaults(body: BodyMeasurements, category: ClothingCategory
 /** Measurement key → i18n key mapping */
 const MEASUREMENT_LABEL_KEYS: Record<string, string> = {
   shoulderWidth: 'measure.shoulderWidth',
-  chestCirc: 'measure.chestCirc',
+  chestWidth: 'measure.chestWidth',
   waistCirc: 'measure.waistCirc',
   hipCirc: 'measure.hipCirc',
   hemCirc: 'measure.hemCirc',
@@ -87,11 +87,11 @@ const MEASUREMENT_LABEL_KEYS: Record<string, string> = {
 
 /** 카테고리별 표시할 측정 키 순서 */
 const CATEGORY_KEYS: Record<ClothingCategory, string[]> = {
-  tshirt: ['shoulderWidth', 'chestCirc', 'totalLength', 'sleeveLength', 'hemCirc'],
-  long_sleeve: ['shoulderWidth', 'chestCirc', 'totalLength', 'sleeveLength', 'cuffCirc', 'hemCirc'],
-  jacket: ['shoulderWidth', 'chestCirc', 'totalLength', 'sleeveLength', 'cuffCirc', 'hemCirc'],
+  tshirt: ['shoulderWidth', 'chestWidth', 'totalLength', 'sleeveLength', 'hemCirc'],
+  long_sleeve: ['shoulderWidth', 'chestWidth', 'totalLength', 'sleeveLength', 'cuffCirc', 'hemCirc'],
+  jacket: ['shoulderWidth', 'chestWidth', 'totalLength', 'sleeveLength', 'cuffCirc', 'hemCirc'],
   pants: ['waistCirc', 'hipCirc', 'totalLength', 'thighCirc', 'kneeCirc', 'hemCirc', 'rise', 'inseam'],
-  dress: ['shoulderWidth', 'chestCirc', 'hipCirc', 'totalLength', 'sleeveLength', 'hemCirc'],
+  dress: ['shoulderWidth', 'chestWidth', 'hipCirc', 'totalLength', 'sleeveLength', 'hemCirc'],
 };
 
 let nextId = 1;

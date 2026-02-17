@@ -92,7 +92,7 @@ const en: TranslationDict = {
 
   // Measurement labels
   'measure.shoulderWidth': 'Shoulder width',
-  'measure.chestCirc': 'Chest circumference',
+  'measure.chestWidth': 'Chest width (flat)',
   'measure.waistCirc': 'Waist circumference',
   'measure.hipCirc': 'Hip circumference',
   'measure.hemCirc': 'Hem circumference',
