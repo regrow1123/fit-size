@@ -95,7 +95,13 @@ const ja: TranslationDict = {
 
   // Clothing input form
   'clothing.title': '{{icon}} 新しい服の実寸',
-  'clothing.sketchGuide': '図面で2点をクリックして測定値を入力してください。',
+  'clothing.categoryTitle': '服の種類',
+  'clothing.inputTitle': 'サイズ入力',
+  'clothing.inputDesc': 'サイズ表の貼り付け、または図面で直接入力',
+  'clothing.sketchTitle': '図面で入力',
+  'clothing.sketchGuide': '2点をクリックして測定値を入力',
+  'clothing.reviewTitle': 'サイズ確認',
+  'clothing.reviewTag': '確認',
   'clothing.tableHeader.part': '部位',
   'clothing.tableHeader.size': '寸法 (cm)',
   'clothing.submit': 'フィッティング確認',

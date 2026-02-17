@@ -95,7 +95,13 @@ const en: TranslationDict = {
 
   // Clothing input form
   'clothing.title': '{{icon}} New Clothing Measurements',
-  'clothing.sketchGuide': 'Click two points on the sketch to enter measurements.',
+  'clothing.categoryTitle': 'Clothing type',
+  'clothing.inputTitle': 'Enter sizes',
+  'clothing.inputDesc': 'Paste a size chart or input directly on the sketch',
+  'clothing.sketchTitle': 'Sketch input',
+  'clothing.sketchGuide': 'Click two points to enter measurements',
+  'clothing.reviewTitle': 'Review sizes',
+  'clothing.reviewTag': 'Review',
   'clothing.tableHeader.part': 'Part',
   'clothing.tableHeader.size': 'Size (cm)',
   'clothing.submit': 'Check fitting',

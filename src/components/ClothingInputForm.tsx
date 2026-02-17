@@ -6,6 +6,7 @@ import { pointMeasurementsToMap } from '../utils/clothingRenderer';
 import { estimateBodyDimensions } from '../data/bodyStats';
 import { useTranslation } from '../i18n';
 import { parseSizeChart, type ParsedSizeChart } from '../utils/sizeChartParser';
+import { Section, SubSection } from './Section';
 
 interface Props {
   onSubmit: (measurements: Map<string, number>, category: ClothingCategory) => void;
@@ -101,7 +102,6 @@ export default function ClothingInputForm({ onSubmit, body }: Props) {
   const { t } = useTranslation();
   const [category, setCategory] = useState<ClothingCategory>('tshirt');
   const [measurements, setMeasurements] = useState<PointMeasurement[]>([]);
-  const [showPaste, setShowPaste] = useState(false);
   const [pasteText, setPasteText] = useState('');
   const [parsedChart, setParsedChart] = useState<ParsedSizeChart | null>(null);
   const [parseError, setParseError] = useState(false);
@@ -175,126 +175,119 @@ export default function ClothingInputForm({ onSubmit, body }: Props) {
   };
 
   const keys = CATEGORY_KEYS[category] ?? [];
-  const catConfig = CLOTHING_CATEGORIES.find(c => c.id === category)!;
 
   return (
-    <div className="space-y-4">
-      <h2 className="text-lg font-bold">{t('clothing.title', { icon: catConfig.icon })}</h2>
+    <div className="space-y-5">
+      {/* ── SECTION 1: 옷 종류 선택 ── */}
+      <Section num={1} title={t('clothing.categoryTitle')}>
+        <div className="flex flex-wrap gap-1.5">
+          {CLOTHING_CATEGORIES.map(cat => (
+            <button
+              key={cat.id}
+              onClick={() => handleCategoryChange(cat.id)}
+              className={`px-3 py-1.5 rounded-full text-sm cursor-pointer transition ${
+                category === cat.id
+                  ? 'bg-blue-600 text-white shadow'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }`}
+            >
+              {cat.icon} {t(`category.${cat.id}`)}
+            </button>
+          ))}
+        </div>
+      </Section>
 
-      {/* Category selector */}
-      <div className="flex flex-wrap gap-1.5">
-        {CLOTHING_CATEGORIES.map(cat => (
-          <button
-            key={cat.id}
-            onClick={() => handleCategoryChange(cat.id)}
-            className={`px-3 py-1.5 rounded-full text-sm cursor-pointer transition ${
-              category === cat.id
-                ? 'bg-blue-600 text-white shadow'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-            }`}
-          >
-            {cat.icon} {t(`category.${cat.id}`)}
-          </button>
-        ))}
-      </div>
-
-      {/* Size chart paste */}
-      <div>
-        <button
-          onClick={() => setShowPaste(!showPaste)}
-          className="flex items-center justify-between w-full text-sm font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded-lg px-3 py-2 hover:bg-blue-100 cursor-pointer transition"
-        >
-          <span>{t('clothing.paste')}</span>
-          <span className="text-blue-400">{showPaste ? '▲' : '▼'}</span>
-        </button>
-        {showPaste && (
-          <div className="mt-2 space-y-2">
-            <p className="text-xs text-gray-400">{t('clothing.pasteDesc')}</p>
-            <textarea
-              value={pasteText}
-              onChange={e => handlePasteChange(e.target.value)}
-              placeholder={t('clothing.pastePlaceholder')}
-              className="w-full border rounded-lg px-3 py-2 text-xs font-mono h-28 resize-none focus:ring-2 focus:ring-blue-300 focus:border-blue-300"
-            />
-            {parseError && (
-              <p className="text-xs text-red-500">{t('clothing.parseFailed')}</p>
-            )}
-            {parsedChart && (
-              <div className="space-y-2">
-                <p className="text-xs text-green-600">
-                  {t('clothing.mappedCount', { count: parsedChart.mappedKeys.filter(k => k !== null).length })}
-                </p>
-                <div className="flex flex-wrap gap-1.5">
-                  {parsedChart.rows.map(row => (
-                    <button
-                      key={row.sizeLabel}
-                      onClick={() => handleSelectSize(row.sizeLabel)}
-                      className={`px-3 py-1.5 rounded-full text-sm border cursor-pointer transition ${
-                        appliedSize === row.sizeLabel
-                          ? 'bg-green-600 text-white border-green-600 shadow'
-                          : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'
-                      }`}
-                    >
-                      {row.sizeLabel}
-                    </button>
-                  ))}
-                </div>
-                {appliedSize && (
-                  <p className="text-xs text-green-600 font-medium">
-                    {t('clothing.applied', { size: appliedSize })}
-                  </p>
-                )}
+      {/* ── SECTION 2: 치수 입력 ── */}
+      <Section num={2} title={t('clothing.inputTitle')} desc={t('clothing.inputDesc')}>
+        {/* 2-1: 사이즈표 붙여넣기 */}
+        <SubSection num="2-1" title={t('clothing.paste')} desc={t('clothing.pasteDesc')}>
+          <textarea
+            value={pasteText}
+            onChange={e => handlePasteChange(e.target.value)}
+            placeholder={t('clothing.pastePlaceholder')}
+            className="w-full border rounded-lg px-3 py-2 text-xs font-mono h-24 resize-none focus:ring-2 focus:ring-blue-300 focus:border-blue-300"
+          />
+          {parseError && (
+            <p className="text-xs text-red-500">{t('clothing.parseFailed')}</p>
+          )}
+          {parsedChart && (
+            <div className="space-y-2">
+              <p className="text-xs text-green-600">
+                {t('clothing.mappedCount', { count: parsedChart.mappedKeys.filter(k => k !== null).length })}
+              </p>
+              <div className="flex flex-wrap gap-1.5">
+                {parsedChart.rows.map(row => (
+                  <button
+                    key={row.sizeLabel}
+                    onClick={() => handleSelectSize(row.sizeLabel)}
+                    className={`px-3 py-1.5 rounded-full text-sm border cursor-pointer transition ${
+                      appliedSize === row.sizeLabel
+                        ? 'bg-green-600 text-white border-green-600 shadow'
+                        : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'
+                    }`}
+                  >
+                    {row.sizeLabel}
+                  </button>
+                ))}
               </div>
-            )}
-          </div>
-        )}
-      </div>
+              {appliedSize && (
+                <p className="text-xs text-green-600 font-medium">
+                  {t('clothing.applied', { size: appliedSize })}
+                </p>
+              )}
+            </div>
+          )}
+        </SubSection>
 
-      <p className="text-sm text-gray-500">{t('clothing.sketchGuide')}</p>
+        {/* 2-2: 도식화로 직접 입력 */}
+        <SubSection num="2-2" title={t('clothing.sketchTitle')} desc={t('clothing.sketchGuide')}>
+          <ClothingSketch
+            category={category}
+            measurements={measurements}
+            onAddMeasurement={handleAdd}
+            onDeleteMeasurement={handleDelete}
+          />
+        </SubSection>
+      </Section>
 
-      <ClothingSketch
-        category={category}
-        measurements={measurements}
-        onAddMeasurement={handleAdd}
-        onDeleteMeasurement={handleDelete}
-      />
+      {/* ── SECTION 3: 치수 확인 + 피팅 ── */}
+      <Section num={3} title={t('clothing.reviewTitle')} tag={t('clothing.reviewTag')} tagColor="green">
+        <div className="border border-gray-200 rounded-lg overflow-hidden">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="bg-gray-50 text-gray-600">
+                <th className="text-left px-3 py-2 font-medium">{t('clothing.tableHeader.part')}</th>
+                <th className="text-right px-3 py-2 font-medium">{t('clothing.tableHeader.size')}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {keys.map(key => {
+                const labelKey = MEASUREMENT_LABEL_KEYS[key];
+                const label = labelKey ? t(labelKey) : key;
+                const clothVal = finalMap.get(key);
+                const userEntered = userMap.has(key);
+                const fromChart = !userEntered && chartOverrides.has(key);
 
-      {/* Clothing dimensions table */}
-      <div className="border border-gray-200 rounded-lg overflow-hidden">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="bg-gray-50 text-gray-600">
-              <th className="text-left px-3 py-2 font-medium">{t('clothing.tableHeader.part')}</th>
-              <th className="text-right px-3 py-2 font-medium">{t('clothing.tableHeader.size')}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {keys.map(key => {
-              const labelKey = MEASUREMENT_LABEL_KEYS[key];
-              const label = labelKey ? t(labelKey) : key;
-              const clothVal = finalMap.get(key);
-              const userEntered = userMap.has(key);
-              const fromChart = !userEntered && chartOverrides.has(key);
+                return (
+                  <tr key={key} className="border-t border-gray-100">
+                    <td className="px-3 py-2 text-gray-700">{label}</td>
+                    <td className={`px-3 py-2 text-right font-mono font-semibold ${userEntered ? 'text-blue-600' : fromChart ? 'text-green-600' : 'text-gray-400'}`}>
+                      {clothVal != null ? clothVal.toFixed(0) : '—'}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
 
-              return (
-                <tr key={key} className="border-t border-gray-100">
-                  <td className="px-3 py-2 text-gray-700">{label}</td>
-                  <td className={`px-3 py-2 text-right font-mono font-semibold ${userEntered ? 'text-blue-600' : fromChart ? 'text-green-600' : 'text-gray-400'}`}>
-                    {clothVal != null ? clothVal.toFixed(0) : '—'}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
-
-      <button
-        onClick={handleSubmit}
-        className="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700 transition cursor-pointer"
-      >
-        {t('clothing.submit')}
-      </button>
+        <button
+          onClick={handleSubmit}
+          className="w-full bg-green-600 text-white py-3 rounded-lg font-bold hover:bg-green-700 transition cursor-pointer"
+        >
+          {t('clothing.submit')}
+        </button>
+      </Section>
     </div>
   );
 }

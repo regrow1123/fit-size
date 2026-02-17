@@ -95,7 +95,13 @@ const ko: TranslationDict = {
 
   // Clothing input form
   'clothing.title': '{{icon}} 새 옷 실측치',
-  'clothing.sketchGuide': '도식화에서 두 점을 클릭하여 측정값을 입력하세요.',
+  'clothing.categoryTitle': '옷 종류',
+  'clothing.inputTitle': '치수 입력',
+  'clothing.inputDesc': '사이즈표 붙여넣기 또는 도식화로 직접 입력',
+  'clothing.sketchTitle': '도식화로 직접 입력',
+  'clothing.sketchGuide': '두 점을 클릭하여 측정값을 입력하세요',
+  'clothing.reviewTitle': '치수 확인',
+  'clothing.reviewTag': '확인',
   'clothing.tableHeader.part': '부위',
   'clothing.tableHeader.size': '치수 (cm)',
   'clothing.submit': '피팅 확인',
