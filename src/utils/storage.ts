@@ -95,3 +95,40 @@ export function saveProfile(profile: SavedBodyProfile): void {
 export function clearAll(): void {
   localStorage.removeItem(STORAGE_KEY);
 }
+
+// ─── Export / Import ───
+
+export function exportWardrobe(): void {
+  const data = getStorage();
+  const json = JSON.stringify(data, null, 2);
+  const blob = new Blob([json], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `fitsize-backup-${new Date().toISOString().slice(0, 10)}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+export function importWardrobe(file: File): Promise<{ garments: number; hasProfile: boolean }> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const data = JSON.parse(reader.result as string) as WardrobeData;
+        if (data.version !== 1 || !Array.isArray(data.garments)) {
+          reject(new Error('잘못된 파일 형식입니다.'));
+          return;
+        }
+        setStorage(data);
+        resolve({ garments: data.garments.length, hasProfile: data.profile !== null });
+      } catch {
+        reject(new Error('JSON 파싱에 실패했습니다.'));
+      }
+    };
+    reader.onerror = () => reject(new Error('파일을 읽을 수 없습니다.'));
+    reader.readAsText(file);
+  });
+}

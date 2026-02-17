@@ -5,7 +5,7 @@ import ClothingInputForm from './components/ClothingInputForm';
 import FittingCanvas from './components/FittingCanvas';
 import ReverseInputForm from './components/ReverseInputForm';
 import ProductRecommendations from './components/ProductRecommendations';
-import { hasStoredProfile, loadWardrobe } from './utils/storage';
+import { hasStoredProfile, loadWardrobe, exportWardrobe, importWardrobe } from './utils/storage';
 import { estimateBodyFromGarments, estimatesToBodyMeasurements } from './utils/reverseEstimator';
 
 type Mode = 'direct' | 'reverse';
@@ -22,6 +22,7 @@ export default function App() {
   const [clothing, setClothing] = useState<Map<string, number> | null>(null);
   const [category, setCategory] = useState<ClothingCategory>('tshirt');
   const [showWelcomeBack, setShowWelcomeBack] = useState(false);
+  const [importMsg, setImportMsg] = useState<string | null>(null);
 
   useEffect(() => {
     if (hasStoredProfile()) {
@@ -155,6 +156,42 @@ export default function App() {
                 <div className="font-bold text-gray-800">내 옷으로 추정</div>
                 <p className="text-sm text-gray-500">가진 옷의 실측치 + 착용감으로 체형 추정</p>
               </button>
+            </div>
+
+            {/* Export / Import */}
+            <div className="mt-8 pt-6 border-t border-gray-200">
+              <p className="text-sm text-gray-500 text-center mb-3">다른 기기에서도 사용하고 싶다면?</p>
+              <div className="flex gap-3 justify-center">
+                <button
+                  onClick={exportWardrobe}
+                  className="flex items-center gap-1.5 border border-gray-300 text-gray-600 px-4 py-2 rounded-lg text-sm hover:bg-gray-50 cursor-pointer transition"
+                >
+                  📤 데이터 내보내기
+                </button>
+                <label className="flex items-center gap-1.5 border border-gray-300 text-gray-600 px-4 py-2 rounded-lg text-sm hover:bg-gray-50 cursor-pointer transition">
+                  📥 데이터 불러오기
+                  <input
+                    type="file"
+                    accept=".json"
+                    className="hidden"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      try {
+                        const result = await importWardrobe(file);
+                        setImportMsg(`✅ 불러오기 완료! 옷 ${result.garments}벌${result.hasProfile ? ', 체형 프로필 포함' : ''}`);
+                        setShowWelcomeBack(true);
+                      } catch (err: unknown) {
+                        setImportMsg(`❌ ${err instanceof Error ? err.message : '불러오기 실패'}`);
+                      }
+                      e.target.value = '';
+                    }}
+                  />
+                </label>
+              </div>
+              {importMsg && (
+                <p className="text-sm text-center mt-2 text-gray-700">{importMsg}</p>
+              )}
             </div>
           </div>
         )}
