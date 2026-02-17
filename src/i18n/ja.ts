@@ -153,14 +153,10 @@ const ja: TranslationDict = {
   'fit.part.hip': 'ヒップ',
   'fit.part.thigh': '太もも',
   'fit.level.tight': 'タイト',
-  'fit.level.slim': 'スリム',
   'fit.level.good': 'ちょうど良い',
-  'fit.level.relaxed': 'リラックス',
   'fit.level.loose': 'ルーズ',
   'fit.overall.tight': '全体的にタイトです',
-  'fit.overall.slim': 'スリムフィットです',
   'fit.overall.good': 'ちょうど良いフィットです',
-  'fit.overall.relaxed': 'リラックスフィットです',
   'fit.overall.loose': '全体的にルーズです',
 
   // Product recommendations

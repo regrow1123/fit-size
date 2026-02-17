@@ -153,14 +153,10 @@ const ko: TranslationDict = {
   'fit.part.hip': '엉덩이',
   'fit.part.thigh': '허벅지',
   'fit.level.tight': '타이트',
-  'fit.level.slim': '슬림',
   'fit.level.good': '적당',
-  'fit.level.relaxed': '편안',
   'fit.level.loose': '루즈',
   'fit.overall.tight': '전체적으로 타이트합니다',
-  'fit.overall.slim': '슬림한 핏입니다',
   'fit.overall.good': '적당한 핏입니다',
-  'fit.overall.relaxed': '편안한 핏입니다',
   'fit.overall.loose': '전체적으로 루즈합니다',
 
   // Product recommendations

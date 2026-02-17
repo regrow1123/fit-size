@@ -153,14 +153,10 @@ const en: TranslationDict = {
   'fit.part.hip': 'Hip',
   'fit.part.thigh': 'Thigh',
   'fit.level.tight': 'Tight',
-  'fit.level.slim': 'Slim',
   'fit.level.good': 'Good',
-  'fit.level.relaxed': 'Relaxed',
   'fit.level.loose': 'Loose',
   'fit.overall.tight': 'Overall tight fit',
-  'fit.overall.slim': 'Slim fit',
   'fit.overall.good': 'Good fit',
-  'fit.overall.relaxed': 'Relaxed fit',
   'fit.overall.loose': 'Overall loose fit',
 
   // Product recommendations

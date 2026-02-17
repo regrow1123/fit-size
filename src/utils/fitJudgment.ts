@@ -6,7 +6,7 @@
 
 import type { BodyMeasurements, ClothingCategory } from '../types';
 
-export type FitLevel = 'tight' | 'slim' | 'good' | 'relaxed' | 'loose';
+export type FitLevel = 'tight' | 'good' | 'loose';
 
 export interface FitResult {
   part: string;       // 내부 키 (shoulder, chest, waist, hip, length, sleeve)
@@ -16,22 +16,20 @@ export interface FitResult {
   level: FitLevel;
 }
 
-/** 부위별 여유량 기준 (cm) — 상의 */
-const EASE_THRESHOLDS: Record<string, { tight: number; slim: number; good: number; relaxed: number }> = {
-  shoulder: { tight: -1, slim: 1, good: 5, relaxed: 8 },
-  chest:    { tight: 2, slim: 6, good: 14, relaxed: 20 },
-  waist:    { tight: 2, slim: 6, good: 16, relaxed: 24 },
-  hip:      { tight: 2, slim: 6, good: 14, relaxed: 20 },
-  thigh:    { tight: 2, slim: 5, good: 10, relaxed: 15 },
+/** 부위별 여유량 기준 (cm) — tight 미만이면 타이트, good 초과면 루즈 */
+const EASE_THRESHOLDS: Record<string, { tight: number; good: number }> = {
+  shoulder: { tight: 0, good: 6 },
+  chest:    { tight: 4, good: 16 },
+  waist:    { tight: 4, good: 18 },
+  hip:      { tight: 4, good: 16 },
+  thigh:    { tight: 3, good: 12 },
 };
 
 function judgeLevel(ease: number, part: string): FitLevel {
   const t = EASE_THRESHOLDS[part] ?? EASE_THRESHOLDS.chest;
   if (ease < t.tight) return 'tight';
-  if (ease < t.slim) return 'slim';
-  if (ease < t.good) return 'good';
-  if (ease < t.relaxed) return 'relaxed';
-  return 'loose';
+  if (ease > t.good) return 'loose';
+  return 'good';
 }
 
 /**

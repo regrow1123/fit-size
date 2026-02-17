@@ -9,11 +9,9 @@ interface Props {
 }
 
 const LEVEL_CONFIG: Record<FitLevel, { emoji: string; color: string; bg: string }> = {
-  tight:   { emoji: '🔴', color: 'text-red-600',    bg: 'bg-red-50' },
-  slim:    { emoji: '🟠', color: 'text-orange-600', bg: 'bg-orange-50' },
-  good:    { emoji: '🟢', color: 'text-green-600',  bg: 'bg-green-50' },
-  relaxed: { emoji: '🔵', color: 'text-blue-600',   bg: 'bg-blue-50' },
-  loose:   { emoji: '🟡', color: 'text-yellow-600', bg: 'bg-yellow-50' },
+  tight: { emoji: '🔴', color: 'text-red-600',    bg: 'bg-red-50' },
+  good:  { emoji: '🟢', color: 'text-green-600',  bg: 'bg-green-50' },
+  loose: { emoji: '🟡', color: 'text-yellow-600', bg: 'bg-yellow-50' },
 };
 
 export default function FitResultPanel({ body, clothing, category }: Props) {
@@ -55,9 +53,7 @@ export default function FitResultPanel({ body, clothing, category }: Props) {
       {/* 범례 */}
       <div className="flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-gray-400 pt-1">
         <span>🔴 {t('fit.level.tight')}</span>
-        <span>🟠 {t('fit.level.slim')}</span>
         <span>🟢 {t('fit.level.good')}</span>
-        <span>🔵 {t('fit.level.relaxed')}</span>
         <span>🟡 {t('fit.level.loose')}</span>
       </div>
     </div>
