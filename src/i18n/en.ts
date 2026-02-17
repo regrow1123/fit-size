@@ -214,6 +214,11 @@ const en: TranslationDict = {
   'sketch.measurementList': 'Measurement list',
 
   // Language selector
+  'auth.login': 'Sign in',
+  'auth.logout': 'Sign out',
+  'auth.cloudSynced': 'Auto-saved to cloud',
+  'auth.loginPrompt': 'Sign in to sync wardrobe data across devices',
+
   'lang.ko': '한국어',
   'lang.en': 'English',
   'lang.ja': '日本語',

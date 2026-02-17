@@ -7,6 +7,7 @@ import ProductRecommendations from './components/ProductRecommendations';
 import { hasStoredProfile, loadWardrobe, exportWardrobe, importWardrobe } from './utils/storage';
 import { estimateBodyFromGarments, estimatesToBodyMeasurements } from './utils/reverseEstimator';
 import { useTranslation, type Locale } from './i18n';
+import { useAuth, saveToCloud, loadFromCloud, migrateLocalToCloud, syncToLocal } from './firebase';
 
 type Step = 'body' | 'clothing' | 'result';
 
@@ -97,6 +98,8 @@ function StepIndicator({
 
 export default function App() {
   const { t, locale, setLocale } = useTranslation();
+  const { user, loading: authLoading, signInWithGoogle, signOut, isConfigured: authConfigured } = useAuth();
+  const [cloudSynced, setCloudSynced] = useState(false);
   const [step, setStep] = useState<Step>('body');
   const [body, setBody] = useState<BodyMeasurements | null>(null);
   const [clothing, setClothing] = useState<Map<string, number> | null>(null);
@@ -109,6 +112,24 @@ export default function App() {
       setShowWelcomeBack(true);
     }
   }, []);
+
+  // 로그인 시 클라우드 동기화
+  useEffect(() => {
+    if (!user || cloudSynced) return;
+    (async () => {
+      // 1. 로컬 → 클라우드 마이그레이션 시도
+      const migrated = await migrateLocalToCloud(user);
+      if (!migrated) {
+        // 2. 클라우드 → 로컬 동기화
+        const cloudData = await loadFromCloud(user);
+        if (cloudData && cloudData.garments.length > 0) {
+          syncToLocal(cloudData);
+          setShowWelcomeBack(true);
+        }
+      }
+      setCloudSynced(true);
+    })();
+  }, [user, cloudSynced]);
 
   const handleLoadProfileDirect = () => {
     const data = loadWardrobe();
@@ -128,6 +149,7 @@ export default function App() {
   const handleBodySubmit = (b: BodyMeasurements) => {
     setBody(b);
     setStep('clothing');
+    if (user) saveToCloud(user).catch(() => {});
   };
 
   const handleClothingSubmit = (m: Map<string, number>, cat: ClothingCategory) => {
@@ -150,22 +172,50 @@ export default function App() {
             <h1 className="text-2xl font-bold">{CATEGORY_ICONS[category]} FitSize</h1>
             <p className="text-blue-100 text-sm">{t('app.subtitle')}</p>
           </div>
-          <div className="flex gap-1">
-            {LOCALES.map(l => {
-              const flag: Record<string, string> = { ko: '🇰🇷', en: '🇺🇸', ja: '🇯🇵' };
-              return (
+          <div className="flex items-center gap-2">
+            {/* Auth button */}
+            {authConfigured && !authLoading && (
+              user ? (
+                <div className="flex items-center gap-2">
+                  <img
+                    src={user.photoURL ?? undefined}
+                    alt=""
+                    className="w-7 h-7 rounded-full border-2 border-white/50"
+                  />
+                  <button
+                    onClick={signOut}
+                    className="text-xs text-blue-100 hover:text-white cursor-pointer"
+                  >
+                    {t('auth.logout')}
+                  </button>
+                </div>
+              ) : (
                 <button
-                  key={l}
-                  onClick={() => setLocale(l)}
-                  className={`w-8 h-8 rounded-full text-lg flex items-center justify-center cursor-pointer transition ${
-                    locale === l ? 'bg-white/25 ring-2 ring-white' : 'hover:bg-blue-500'
-                  }`}
-                  title={t(`lang.${l}`)}
+                  onClick={signInWithGoogle}
+                  className="flex items-center gap-1 bg-white/20 hover:bg-white/30 text-white text-xs px-3 py-1.5 rounded-full cursor-pointer transition"
                 >
-                  {flag[l]}
+                  <span>☁️</span> {t('auth.login')}
                 </button>
-              );
-            })}
+              )
+            )}
+            {/* Language selector */}
+            <div className="flex gap-1">
+              {LOCALES.map(l => {
+                const flag: Record<string, string> = { ko: '🇰🇷', en: '🇺🇸', ja: '🇯🇵' };
+                return (
+                  <button
+                    key={l}
+                    onClick={() => setLocale(l)}
+                    className={`w-8 h-8 rounded-full text-lg flex items-center justify-center cursor-pointer transition ${
+                      locale === l ? 'bg-white/25 ring-2 ring-white' : 'hover:bg-blue-500'
+                    }`}
+                    title={t(`lang.${l}`)}
+                  >
+                    {flag[l]}
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
       </header>
@@ -202,9 +252,15 @@ export default function App() {
               <>
                 <ReverseInputForm onSubmit={handleBodySubmit} />
 
-                {/* Export / Import */}
+                {/* Cloud sync status / Export / Import */}
                 <div className="mt-6 pt-4 border-t border-gray-200">
-                  <p className="text-sm text-gray-500 text-center mb-3">{t('app.importPrompt')}</p>
+                  {user ? (
+                    <p className="text-sm text-green-600 text-center mb-3">☁️ {t('auth.cloudSynced')}</p>
+                  ) : (
+                    <p className="text-sm text-gray-500 text-center mb-3">
+                      {authConfigured ? t('auth.loginPrompt') : t('app.importPrompt')}
+                    </p>
+                  )}
                   <div className="flex gap-3 justify-center">
                     <button
                       onClick={exportWardrobe}

@@ -214,6 +214,12 @@ const ko: TranslationDict = {
   'sketch.measurementList': '측정 목록',
 
   // Language selector
+  // Auth
+  'auth.login': '로그인',
+  'auth.logout': '로그아웃',
+  'auth.cloudSynced': '클라우드에 자동 저장됩니다',
+  'auth.loginPrompt': '로그인하면 다른 기기에서도 옷장 데이터를 사용할 수 있어요',
+
   'lang.ko': '한국어',
   'lang.en': 'English',
   'lang.ja': '日本語',

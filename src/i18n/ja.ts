@@ -214,6 +214,11 @@ const ja: TranslationDict = {
   'sketch.measurementList': '測定リスト',
 
   // Language selector
+  'auth.login': 'ログイン',
+  'auth.logout': 'ログアウト',
+  'auth.cloudSynced': 'クラウドに自動保存されます',
+  'auth.loginPrompt': 'ログインするとデバイス間でデータを同期できます',
+
   'lang.ko': '한국어',
   'lang.en': 'English',
   'lang.ja': '日本語',
