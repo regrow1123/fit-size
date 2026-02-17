@@ -6,7 +6,7 @@ import { pointMeasurementsToMap } from '../utils/clothingRenderer';
 import { estimateBodyDimensions } from '../data/bodyStats';
 import { useTranslation } from '../i18n';
 import { parseSizeChart, type ParsedSizeChart } from '../utils/sizeChartParser';
-import { Section, SubSection } from './Section';
+import { Section } from './Section';
 
 interface Props {
   onSubmit: (measurements: Map<string, number>, category: ClothingCategory) => void;
@@ -102,6 +102,7 @@ export default function ClothingInputForm({ onSubmit, body }: Props) {
   const { t } = useTranslation();
   const [category, setCategory] = useState<ClothingCategory>('tshirt');
   const [measurements, setMeasurements] = useState<PointMeasurement[]>([]);
+  const [inputMode, setInputMode] = useState<'paste' | 'sketch'>('paste');
   const [pasteText, setPasteText] = useState('');
   const [parsedChart, setParsedChart] = useState<ParsedSizeChart | null>(null);
   const [parseError, setParseError] = useState(false);
@@ -197,57 +198,83 @@ export default function ClothingInputForm({ onSubmit, body }: Props) {
         </div>
       </Section>
 
-      {/* ── SECTION 2: 치수 입력 ── */}
-      <Section num={2} title={t('clothing.inputTitle')} desc={t('clothing.inputDesc')}>
-        {/* 2-1: 사이즈표 붙여넣기 */}
-        <SubSection num="2-1" title={t('clothing.paste')} desc={t('clothing.pasteDesc')}>
-          <textarea
-            value={pasteText}
-            onChange={e => handlePasteChange(e.target.value)}
-            placeholder={t('clothing.pastePlaceholder')}
-            className="w-full border rounded-lg px-3 py-2 text-xs font-mono h-24 resize-none focus:ring-2 focus:ring-blue-300 focus:border-blue-300"
-          />
-          {parseError && (
-            <p className="text-xs text-red-500">{t('clothing.parseFailed')}</p>
-          )}
-          {parsedChart && (
-            <div className="space-y-2">
-              <p className="text-xs text-green-600">
-                {t('clothing.mappedCount', { count: parsedChart.mappedKeys.filter(k => k !== null).length })}
-              </p>
-              <div className="flex flex-wrap gap-1.5">
-                {parsedChart.rows.map(row => (
-                  <button
-                    key={row.sizeLabel}
-                    onClick={() => handleSelectSize(row.sizeLabel)}
-                    className={`px-3 py-1.5 rounded-full text-sm border cursor-pointer transition ${
-                      appliedSize === row.sizeLabel
-                        ? 'bg-green-600 text-white border-green-600 shadow'
-                        : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'
-                    }`}
-                  >
-                    {row.sizeLabel}
-                  </button>
-                ))}
-              </div>
-              {appliedSize && (
-                <p className="text-xs text-green-600 font-medium">
-                  {t('clothing.applied', { size: appliedSize })}
-                </p>
-              )}
-            </div>
-          )}
-        </SubSection>
+      {/* ── SECTION 2: 치수 입력 (탭 선택) ── */}
+      <Section num={2} title={t('clothing.inputTitle')}>
+        {/* Tab selector */}
+        <div className="flex border-b border-gray-200 -mx-3 px-3">
+          <button
+            onClick={() => setInputMode('paste')}
+            className={`flex-1 py-2 text-sm font-medium text-center border-b-2 transition cursor-pointer ${
+              inputMode === 'paste'
+                ? 'border-blue-600 text-blue-600'
+                : 'border-transparent text-gray-400 hover:text-gray-600'
+            }`}
+          >
+            📋 {t('clothing.tabPaste')}
+          </button>
+          <button
+            onClick={() => setInputMode('sketch')}
+            className={`flex-1 py-2 text-sm font-medium text-center border-b-2 transition cursor-pointer ${
+              inputMode === 'sketch'
+                ? 'border-blue-600 text-blue-600'
+                : 'border-transparent text-gray-400 hover:text-gray-600'
+            }`}
+          >
+            ✏️ {t('clothing.tabSketch')}
+          </button>
+        </div>
 
-        {/* 2-2: 도식화로 직접 입력 */}
-        <SubSection num="2-2" title={t('clothing.sketchTitle')} desc={t('clothing.sketchGuide')}>
-          <ClothingSketch
-            category={category}
-            measurements={measurements}
-            onAddMeasurement={handleAdd}
-            onDeleteMeasurement={handleDelete}
-          />
-        </SubSection>
+        {inputMode === 'paste' ? (
+          <div className="space-y-2">
+            <p className="text-xs text-gray-400">{t('clothing.pasteDesc')}</p>
+            <textarea
+              value={pasteText}
+              onChange={e => handlePasteChange(e.target.value)}
+              placeholder={t('clothing.pastePlaceholder')}
+              className="w-full border rounded-lg px-3 py-2 text-xs font-mono h-24 resize-none focus:ring-2 focus:ring-blue-300 focus:border-blue-300"
+            />
+            {parseError && (
+              <p className="text-xs text-red-500">{t('clothing.parseFailed')}</p>
+            )}
+            {parsedChart && (
+              <div className="space-y-2">
+                <p className="text-xs text-green-600">
+                  {t('clothing.mappedCount', { count: parsedChart.mappedKeys.filter(k => k !== null).length })}
+                </p>
+                <div className="flex flex-wrap gap-1.5">
+                  {parsedChart.rows.map(row => (
+                    <button
+                      key={row.sizeLabel}
+                      onClick={() => handleSelectSize(row.sizeLabel)}
+                      className={`px-3 py-1.5 rounded-full text-sm border cursor-pointer transition ${
+                        appliedSize === row.sizeLabel
+                          ? 'bg-green-600 text-white border-green-600 shadow'
+                          : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'
+                      }`}
+                    >
+                      {row.sizeLabel}
+                    </button>
+                  ))}
+                </div>
+                {appliedSize && (
+                  <p className="text-xs text-green-600 font-medium">
+                    {t('clothing.applied', { size: appliedSize })}
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="space-y-2">
+            <p className="text-xs text-gray-400">{t('clothing.sketchGuide')}</p>
+            <ClothingSketch
+              category={category}
+              measurements={measurements}
+              onAddMeasurement={handleAdd}
+              onDeleteMeasurement={handleDelete}
+            />
+          </div>
+        )}
       </Section>
 
       {/* ── SECTION 3: 치수 확인 + 피팅 ── */}
