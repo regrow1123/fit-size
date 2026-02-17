@@ -29,7 +29,7 @@ export function calculateAvatarDimensions(body: BodyMeasurements): AvatarDimensi
   const shoulderWidth = stats.shoulderWidth * SCALE;
   const shoulderY = headRadius * 2 + neckHeight;
 
-  // 가슴/허리 (둘레 → 정면 너비: 둘레 / π 근사)
+  // 가슴/허리 (둘레 → 정면 반폭: 둘레 / 2)
   const chestWidth = (stats.chestCirc / 2) * SCALE;
   const chestDepth = chestWidth * 0.7;
   const waistWidth = (stats.waistCirc / 2) * SCALE;

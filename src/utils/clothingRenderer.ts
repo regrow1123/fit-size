@@ -99,55 +99,63 @@ function drawTop(
   const sy = TOP_MARGIN + av.shoulderY;
   const isLong = cl.category === 'long_sleeve' || cl.category === 'jacket';
 
-  const shH = cl.shoulderWidth / 2;
-  const chH = cl.chestWidth / 2;
+  // All half-widths (center to edge)
+  const shH = cl.shoulderWidth / 2;  // 어깨: 전체 너비의 반
+  const chH = cl.chestWidth / 2;     // 가슴: 둘레/2의 반 = 정면 반폭
   const hemH = cl.hemWidth / 2;
   const neckH = av.neckWidth / 2;
   const tLen = cl.totalLength;
 
-  // Sleeve geometry — arm hangs at ~5° angle
-  const slLen = cl.sleeveLength;
-  const slW = cl.sleeveWidth / 2;
-  const cuffW = (cl.cuffWidth ?? cl.sleeveWidth * 0.7) / 2;
-
-  // Sleeve endpoints (angled slightly outward)
-  const slAngle = isLong ? 0.12 : 0.25; // radians from vertical
-  const slDx = Math.sin(slAngle) * slLen;
-  const slDy = Math.cos(slAngle) * slLen;
-
-  // Body contour Y positions
+  // Body Y positions
+  const armpitY = sy + tLen * 0.12;  // 겨드랑이
   const chestY = sy + tLen * 0.25;
   const hemY = sy + tLen;
 
+  // Sleeve: hangs down from shoulder, angled slightly outward
+  const slLen = cl.sleeveLength;
+  const endSlW = isLong ? (cl.cuffWidth ?? cl.sleeveWidth * 0.7) / 2 : cl.sleeveWidth / 2;
+
+  // Sleeve angle from vertical
+  const slAngle = isLong ? 0.1 : 0.2;
+  const slDx = Math.sin(slAngle) * slLen;
+  const slDy = Math.cos(slAngle) * slLen;
+
+  // Sleeve outer/inner endpoints (left side)
+  // Outer: shoulder edge outward
+  const lOuterStartX = cx - shH;
+  const lOuterEndX = lOuterStartX - slDx;
+  const lOuterEndY = sy + slDy;
+  // Inner: from armpit area (max of chH or slightly inside shoulder)
+  const lInnerStartX = cx - Math.max(chH, shH - 5);
+  const lInnerEndX = lOuterEndX + endSlW * 2;
+  const lInnerEndY = lOuterEndY + 2;
+
+  // Ensure inner end doesn't cross past body
+  const lInnerEndXSafe = Math.min(lInnerEndX, lInnerStartX + 2);
+
   setClothStyle(ctx, CLOTH_COLOR, CLOTH_OUTLINE);
 
-  // ── Draw body of garment ──
   ctx.beginPath();
 
-  // Left neckline
+  // Start: left neckline
   ctx.moveTo(cx - neckH, sy - 2);
-
-  // Left shoulder
   ctx.lineTo(cx - shH, sy);
 
-  // Left sleeve
-  const lSlEndX = cx - shH - slDx;
-  const lSlEndY = sy + slDy;
-  const lSlW = isLong ? cuffW : slW;
-
-  // Outer sleeve edge
+  // Left sleeve outer edge (shoulder → sleeve end)
   ctx.bezierCurveTo(
-    cx - shH - slDx * 0.3, sy + slDy * 0.3,
-    lSlEndX + lSlW * 0.2, lSlEndY - slDy * 0.1,
-    lSlEndX, lSlEndY,
+    cx - shH - slDx * 0.4, sy + slDy * 0.3,
+    lOuterEndX + endSlW * 0.3, lOuterEndY - slDy * 0.15,
+    lOuterEndX, lOuterEndY,
   );
-  // Sleeve bottom
-  ctx.lineTo(lSlEndX + lSlW * 2, lSlEndY + 2);
-  // Inner sleeve edge back to body
+
+  // Sleeve bottom (outer → inner)
+  ctx.lineTo(lInnerEndXSafe, lInnerEndY);
+
+  // Left sleeve inner edge (sleeve end → armpit/chest)
   ctx.bezierCurveTo(
-    lSlEndX + lSlW * 2 - slDx * 0.1, lSlEndY - slDy * 0.2,
-    cx - chH - 2, sy + slDy * 0.4,
-    cx - chH, chestY,
+    lInnerEndXSafe + slDx * 0.1, lInnerEndY - slDy * 0.3,
+    lInnerStartX - 1, armpitY + (chestY - armpitY) * 0.3,
+    lInnerStartX, chestY,
   );
 
   // Left body: chest → hem
@@ -160,34 +168,39 @@ function drawTop(
   // Bottom hem
   ctx.lineTo(cx + hemH, hemY);
 
-  // Right body: hem → chest
+  // Right body: hem → chest (mirror)
   ctx.bezierCurveTo(
     cx + hemH + 2, hemY - tLen * 0.15,
     cx + chH, chestY + tLen * 0.15,
     cx + chH, chestY,
   );
 
-  // Right sleeve (mirror)
-  const rSlEndX = cx + shH + slDx;
-  const rSlEndY = sy + slDy;
-  const rSlW = isLong ? cuffW : slW;
+  // Right sleeve (mirror of left)
+  const rInnerStartX = cx + Math.max(chH, shH - 5);
+  const rOuterEndX = cx + shH + slDx;
+  const rOuterEndY = sy + slDy;
+  const rInnerEndX = rOuterEndX - endSlW * 2;
+  const rInnerEndXSafe = Math.max(rInnerEndX, rInnerStartX - 2);
 
+  // Right sleeve inner edge (chest → sleeve end)
   ctx.bezierCurveTo(
-    cx + chH + 2, sy + slDy * 0.4,
-    rSlEndX - rSlW * 2 + slDx * 0.1, rSlEndY - slDy * 0.2,
-    rSlEndX - rSlW * 2, rSlEndY + 2,
+    rInnerStartX + 1, armpitY + (chestY - armpitY) * 0.3,
+    rInnerEndXSafe - slDx * 0.1, rOuterEndY + 2 - slDy * 0.3,
+    rInnerEndXSafe, rOuterEndY + 2,
   );
-  ctx.lineTo(rSlEndX, rSlEndY);
+
+  // Sleeve bottom (inner → outer)
+  ctx.lineTo(rOuterEndX, rOuterEndY);
+
+  // Right sleeve outer edge (sleeve end → shoulder)
   ctx.bezierCurveTo(
-    rSlEndX - lSlW * 0.2, rSlEndY - slDy * 0.1,
-    cx + shH + slDx * 0.3, sy + slDy * 0.3,
+    rOuterEndX - endSlW * 0.3, rOuterEndY - slDy * 0.15,
+    cx + shH + slDx * 0.4, sy + slDy * 0.3,
     cx + shH, sy,
   );
 
   // Right neckline
   ctx.lineTo(cx + neckH, sy - 2);
-
-  // Neckline curve
   ctx.quadraticCurveTo(cx, sy + 10, cx - neckH, sy - 2);
 
   ctx.closePath();
@@ -195,7 +208,6 @@ function drawTop(
   ctx.stroke();
   ctx.setLineDash([]);
 
-  // ── Fit indicators ──
   drawFitBadges(ctx, av, cl, cx, sy);
 }
 
