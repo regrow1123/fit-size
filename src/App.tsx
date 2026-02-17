@@ -4,7 +4,7 @@ import ClothingInputForm from './components/ClothingInputForm';
 import FittingCanvas from './components/FittingCanvas';
 import ReverseInputForm from './components/ReverseInputForm';
 import ProductRecommendations from './components/ProductRecommendations';
-import { hasStoredProfile, loadWardrobe, exportWardrobe, importWardrobe } from './utils/storage';
+import { hasStoredProfile, loadWardrobe, importWardrobeFromText } from './utils/storage';
 import { estimateBodyFromGarments, estimatesToBodyMeasurements } from './utils/reverseEstimator';
 import { useTranslation, type Locale } from './i18n';
 import { useAuth, saveToCloud, loadFromCloud, migrateLocalToCloud, syncToLocal } from './firebase';
@@ -106,6 +106,9 @@ export default function App() {
   const [category, setCategory] = useState<ClothingCategory>('tshirt');
   const [showWelcomeBack, setShowWelcomeBack] = useState(false);
   const [importMsg, setImportMsg] = useState<string | null>(null);
+  const [showExportText, setShowExportText] = useState(false);
+  const [showImportText, setShowImportText] = useState(false);
+  const [importTextValue, setImportTextValue] = useState('');
 
   useEffect(() => {
     if (hasStoredProfile()) {
@@ -263,37 +266,65 @@ export default function App() {
                   )}
                   <div className="flex gap-3 justify-center">
                     <button
-                      onClick={exportWardrobe}
+                      onClick={() => { setShowExportText(!showExportText); setShowImportText(false); }}
                       className="flex items-center gap-1.5 border border-gray-300 text-gray-600 px-4 py-2 rounded-lg text-sm hover:bg-gray-50 cursor-pointer transition"
                     >
                       {t('app.export')}
                     </button>
-                    <label className="flex items-center gap-1.5 border border-gray-300 text-gray-600 px-4 py-2 rounded-lg text-sm hover:bg-gray-50 cursor-pointer transition">
+                    <button
+                      onClick={() => { setShowImportText(!showImportText); setShowExportText(false); setImportMsg(null); setImportTextValue(''); }}
+                      className="flex items-center gap-1.5 border border-gray-300 text-gray-600 px-4 py-2 rounded-lg text-sm hover:bg-gray-50 cursor-pointer transition"
+                    >
                       {t('app.import')}
-                      <input
-                        type="file"
-                        accept=".json"
-                        className="hidden"
-                        onChange={async (e) => {
-                          const file = e.target.files?.[0];
-                          if (!file) return;
+                    </button>
+                  </div>
+
+                  {showExportText && (
+                    <div className="mt-3 space-y-2">
+                      <p className="text-xs text-gray-500">{t('app.exportCopyGuide')}</p>
+                      <textarea
+                        readOnly
+                        value={JSON.stringify(loadWardrobe())}
+                        onFocus={e => e.target.select()}
+                        className="w-full border rounded-lg px-3 py-2 text-xs font-mono h-24 resize-none bg-gray-50"
+                      />
+                    </div>
+                  )}
+
+                  {showImportText && (
+                    <div className="mt-3 space-y-2">
+                      <p className="text-xs text-gray-500">{t('app.importPasteGuide')}</p>
+                      <textarea
+                        value={importTextValue}
+                        onChange={e => setImportTextValue(e.target.value)}
+                        placeholder={t('app.importPastePlaceholder')}
+                        className="w-full border rounded-lg px-3 py-2 text-xs font-mono h-24 resize-none"
+                      />
+                      <button
+                        onClick={() => {
                           try {
-                            const result = await importWardrobe(file);
+                            const result = importWardrobeFromText(importTextValue);
                             setImportMsg(t('app.importSuccess', {
                               garments: result.garments,
                               profile: result.hasProfile ? t('app.importProfileIncluded') : '',
                             }));
                             setShowWelcomeBack(true);
+                            setShowImportText(false);
+                            setImportTextValue('');
                           } catch (err: unknown) {
                             setImportMsg(t('app.importFailed', {
                               error: err instanceof Error ? err.message : t('app.importFailedGeneric'),
                             }));
                           }
-                          e.target.value = '';
                         }}
-                      />
-                    </label>
-                  </div>
+                        disabled={!importTextValue.trim()}
+                        className="w-full bg-blue-600 text-white py-2 rounded-lg text-sm font-medium hover:bg-blue-700 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed transition"
+                      >
+                        {t('app.importApply')}
+                      </button>
+                    </div>
+                  )}
+
                   {importMsg && <p className="text-sm text-center mt-2 text-gray-700">{importMsg}</p>}
                 </div>
               </>

@@ -112,6 +112,15 @@ export function exportWardrobe(): void {
   URL.revokeObjectURL(url);
 }
 
+export function importWardrobeFromText(text: string): { garments: number; hasProfile: boolean } {
+  const data = JSON.parse(text) as WardrobeData;
+  if (data.version !== 1 || !Array.isArray(data.garments)) {
+    throw new Error('잘못된 데이터 형식입니다.');
+  }
+  setStorage(data);
+  return { garments: data.garments.length, hasProfile: data.profile !== null };
+}
+
 export function importWardrobe(file: File): Promise<{ garments: number; hasProfile: boolean }> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
