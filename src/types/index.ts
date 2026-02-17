@@ -6,7 +6,7 @@ export interface BodyMeasurements {
   gender: 'male' | 'female';
   height: number;       // cm
   weight: number;       // kg
-  shoulderWidth: number; // cm - 어깨너비
+  shoulderWidth?: number; // cm - 어깨너비
   chestCirc?: number;   // cm - 가슴둘레 (선택)
   waistCirc?: number;   // cm - 허리둘레 (선택)
   hipCirc?: number;     // cm - 엉덩이둘레 (선택)
