@@ -60,7 +60,7 @@ export default function ReverseInputForm({ onSubmit }: Props) {
   const [directChest, setDirectChest] = useState<string>('');
   const [directWaist, setDirectWaist] = useState<string>('');
   const [directHip, setDirectHip] = useState<string>('');
-  const [showPaste, setShowPaste] = useState(false);
+  const [garmentInputMode, setGarmentInputMode] = useState<'paste' | 'sketch'>('paste');
   const [pasteText, setPasteText] = useState('');
   const [parsedChart, setParsedChart] = useState<ParsedSizeChart | null>(null);
   const [parseError, setParseError] = useState(false);
@@ -379,66 +379,81 @@ export default function ReverseInputForm({ onSubmit }: Props) {
             ))}
           </div>
 
-          {/* Size chart paste */}
-          <div>
+          {/* Tab selector: paste vs sketch */}
+          <div className="flex border-b border-gray-200">
             <button
-              onClick={() => setShowPaste(!showPaste)}
-              className="flex items-center justify-between w-full text-sm font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded-lg px-3 py-2 hover:bg-blue-100 cursor-pointer transition"
+              onClick={() => setGarmentInputMode('paste')}
+              className={`flex-1 py-2 text-sm font-medium text-center border-b-2 transition cursor-pointer ${
+                garmentInputMode === 'paste'
+                  ? 'border-blue-600 text-blue-600'
+                  : 'border-transparent text-gray-400 hover:text-gray-600'
+              }`}
             >
-              <span>{t('clothing.paste')}</span>
-              <span className="text-blue-400">{showPaste ? '▲' : '▼'}</span>
+              📋 {t('clothing.tabPaste')}
             </button>
-            {showPaste && (
-              <div className="mt-2 space-y-2">
-                <p className="text-xs text-gray-400">{t('clothing.pasteDesc')}</p>
-                <textarea
-                  value={pasteText}
-                  onChange={e => handlePasteChange(e.target.value)}
-                  placeholder={t('clothing.pastePlaceholder')}
-                  className="w-full border rounded-lg px-3 py-2 text-xs font-mono h-28 resize-none focus:ring-2 focus:ring-blue-300 focus:border-blue-300"
-                />
-                {parseError && (
-                  <p className="text-xs text-red-500">{t('clothing.parseFailed')}</p>
-                )}
-                {parsedChart && (
-                  <div className="space-y-2">
-                    <p className="text-xs text-green-600">
-                      {t('clothing.mappedCount', { count: parsedChart.mappedKeys.filter(k => k !== null).length })}
-                    </p>
-                    <div className="flex flex-wrap gap-1.5">
-                      {parsedChart.rows.map(row => (
-                        <button
-                          key={row.sizeLabel}
-                          onClick={() => handleSelectChartSize(row.sizeLabel)}
-                          className={`px-3 py-1.5 rounded-full text-sm border cursor-pointer transition ${
-                            appliedSize === row.sizeLabel
-                              ? 'bg-green-600 text-white border-green-600 shadow'
-                              : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'
-                          }`}
-                        >
-                          {row.sizeLabel}
-                        </button>
-                      ))}
-                    </div>
-                    {appliedSize && (
-                      <p className="text-xs text-green-600 font-medium">
-                        {t('clothing.applied', { size: appliedSize })}
-                      </p>
-                    )}
-                  </div>
-                )}
-              </div>
-            )}
+            <button
+              onClick={() => setGarmentInputMode('sketch')}
+              className={`flex-1 py-2 text-sm font-medium text-center border-b-2 transition cursor-pointer ${
+                garmentInputMode === 'sketch'
+                  ? 'border-blue-600 text-blue-600'
+                  : 'border-transparent text-gray-400 hover:text-gray-600'
+              }`}
+            >
+              ✏️ {t('clothing.tabSketch')}
+            </button>
           </div>
 
-          <p className="text-xs text-gray-400">{t('reverse.sketchGuide')}</p>
-
-          <ClothingSketch
-            category={category}
-            measurements={sketchMeasurements}
-            onAddMeasurement={handleAddMeasurement}
-            onDeleteMeasurement={handleDeleteMeasurement}
-          />
+          {garmentInputMode === 'paste' ? (
+            <div className="space-y-2">
+              <p className="text-xs text-gray-400">{t('clothing.pasteDesc')}</p>
+              <textarea
+                value={pasteText}
+                onChange={e => handlePasteChange(e.target.value)}
+                placeholder={t('clothing.pastePlaceholder')}
+                className="w-full border rounded-lg px-3 py-2 text-xs font-mono h-24 resize-none focus:ring-2 focus:ring-blue-300 focus:border-blue-300"
+              />
+              {parseError && (
+                <p className="text-xs text-red-500">{t('clothing.parseFailed')}</p>
+              )}
+              {parsedChart && (
+                <div className="space-y-2">
+                  <p className="text-xs text-green-600">
+                    {t('clothing.mappedCount', { count: parsedChart.mappedKeys.filter(k => k !== null).length })}
+                  </p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {parsedChart.rows.map(row => (
+                      <button
+                        key={row.sizeLabel}
+                        onClick={() => handleSelectChartSize(row.sizeLabel)}
+                        className={`px-3 py-1.5 rounded-full text-sm border cursor-pointer transition ${
+                          appliedSize === row.sizeLabel
+                            ? 'bg-green-600 text-white border-green-600 shadow'
+                            : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'
+                        }`}
+                      >
+                        {row.sizeLabel}
+                      </button>
+                    ))}
+                  </div>
+                  {appliedSize && (
+                    <p className="text-xs text-green-600 font-medium">
+                      {t('clothing.applied', { size: appliedSize })}
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <p className="text-xs text-gray-400">{t('reverse.sketchGuide')}</p>
+              <ClothingSketch
+                category={category}
+                measurements={sketchMeasurements}
+                onAddMeasurement={handleAddMeasurement}
+                onDeleteMeasurement={handleDeleteMeasurement}
+              />
+            </div>
+          )}
 
           {/* Feedback selector popup */}
           {pendingFeedbackIdx !== null && (
