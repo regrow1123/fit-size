@@ -4,8 +4,11 @@ const ja: TranslationDict = {
   // App
   'app.subtitle': 'オンラインショッピングの服サイズ、試着して決めましょう',
   'app.step.body': '体型設定',
-  'app.step.clothing': '新しい服の実寸',
-  'app.step.result': 'フィッティング結果',
+  'app.step.bodyDesc': '身長・体重入力',
+  'app.step.clothing': '服のサイズ',
+  'app.step.clothingDesc': 'サイズを入力',
+  'app.step.result': '結果',
+  'app.step.resultDesc': 'フィット確認',
   'app.welcome.title': '👋 おかえりなさい！',
   'app.welcome.desc': '保存されたプロフィールがあります。すぐに新しい服のフィッティングを始められます。',
   'app.welcome.loadProfile': '✅ 保存プロフィールで開始',

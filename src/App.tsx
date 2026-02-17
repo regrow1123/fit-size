@@ -16,6 +16,85 @@ const CATEGORY_ICONS: Record<ClothingCategory, string> = {
 
 const LOCALES: Locale[] = ['ko', 'en', 'ja'];
 
+const STEP_ICONS = ['🧍', '📐', '✅'];
+
+function StepIndicator({
+  step,
+  body,
+  clothing,
+  onStepClick,
+}: {
+  step: Step;
+  body: BodyMeasurements | null;
+  clothing: Map<string, number> | null;
+  onStepClick: (s: Step) => void;
+}) {
+  const { t } = useTranslation();
+  const steps: { key: Step; label: string; desc: string }[] = [
+    { key: 'body', label: t('app.step.body'), desc: t('app.step.bodyDesc') },
+    { key: 'clothing', label: t('app.step.clothing'), desc: t('app.step.clothingDesc') },
+    { key: 'result', label: t('app.step.result'), desc: t('app.step.resultDesc') },
+  ];
+  const stepOrder: Step[] = ['body', 'clothing', 'result'];
+  const currentIdx = stepOrder.indexOf(step);
+
+  return (
+    <div className="mb-8">
+      <div className="flex items-start">
+        {steps.map((s, i) => {
+          const isDone = i < currentIdx;
+          const isCurrent = i === currentIdx;
+          const canGo = i <= currentIdx
+            || (i === 1 && body !== null)
+            || (i === 2 && body !== null && clothing !== null);
+
+          return (
+            <div key={s.key} className="flex-1 flex flex-col items-center relative">
+              {/* Connecting line */}
+              {i > 0 && (
+                <div className={`absolute top-5 right-1/2 w-full h-0.5 -translate-y-1/2 ${
+                  i <= currentIdx ? 'bg-blue-500' : 'bg-gray-300'
+                }`} />
+              )}
+
+              {/* Circle */}
+              <button
+                disabled={!canGo}
+                onClick={() => canGo && onStepClick(s.key)}
+                className={`relative z-10 w-10 h-10 rounded-full flex items-center justify-center text-lg transition cursor-pointer
+                  ${isCurrent
+                    ? 'bg-blue-600 text-white ring-4 ring-blue-200 shadow-lg'
+                    : isDone
+                      ? 'bg-green-500 text-white shadow'
+                      : canGo
+                        ? 'bg-blue-100 text-blue-600 hover:bg-blue-200'
+                        : 'bg-gray-200 text-gray-400 !cursor-not-allowed'
+                  }`}
+              >
+                {isDone ? '✓' : STEP_ICONS[i]}
+              </button>
+
+              {/* Label */}
+              <span className={`mt-2 text-xs font-bold text-center ${
+                isCurrent ? 'text-blue-700' : isDone ? 'text-green-600' : 'text-gray-400'
+              }`}>
+                {s.label}
+              </span>
+
+              {/* Description (current step only) */}
+              {isCurrent && (
+                <span className="mt-0.5 text-[11px] text-gray-400 text-center max-w-[100px]">
+                  {s.desc}
+                </span>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 export default function App() {
   const { t, locale, setLocale } = useTranslation();
   const [step, setStep] = useState<Step>('body');
@@ -62,8 +141,6 @@ export default function App() {
     setBody(null);
     setClothing(null);
   };
-
-  const stepLabels = [t('app.step.body'), t('app.step.clothing'), t('app.step.result')];
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -117,34 +194,7 @@ export default function App() {
         )}
 
         {/* Step indicator */}
-        <div className="flex gap-2 mb-8 text-sm">
-          {(['body', 'clothing', 'result'] as Step[]).map((s, i) => {
-            const stepOrder: Step[] = ['body', 'clothing', 'result'];
-            const currentIdx = stepOrder.indexOf(step);
-            const targetIdx = i;
-            const canGo = targetIdx <= currentIdx
-              || (targetIdx === 1 && body !== null)
-              || (targetIdx === 2 && body !== null && clothing !== null);
-            const isCurrent = step === s;
-
-            return (
-              <button
-                key={s}
-                disabled={!canGo}
-                onClick={() => { if (canGo && !isCurrent) setStep(s); }}
-                className={`flex-1 text-center py-2 rounded transition cursor-pointer ${
-                  isCurrent
-                    ? 'bg-blue-600 text-white font-bold'
-                    : canGo
-                      ? 'bg-blue-100 text-blue-700 hover:bg-blue-200'
-                      : 'bg-gray-200 text-gray-400 !cursor-not-allowed'
-                }`}
-              >
-                {i + 1}. {stepLabels[i]}
-              </button>
-            );
-          })}
-        </div>
+        <StepIndicator step={step} body={body} clothing={clothing} onStepClick={setStep} />
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div className="bg-white rounded-lg shadow p-6">

@@ -4,8 +4,11 @@ const ko: TranslationDict = {
   // App
   'app.subtitle': '온라인 쇼핑 옷 사이즈, 입어보고 결정하세요',
   'app.step.body': '체형 설정',
-  'app.step.clothing': '새 옷 실측치',
+  'app.step.bodyDesc': '키·몸무게 입력',
+  'app.step.clothing': '옷 치수',
+  'app.step.clothingDesc': '새 옷 사이즈 입력',
   'app.step.result': '피팅 결과',
+  'app.step.resultDesc': '핏 확인',
   'app.welcome.title': '👋 다시 오셨네요!',
   'app.welcome.desc': '저장된 프로필이 있습니다. 바로 새 옷 피팅을 시작할 수 있어요.',
   'app.welcome.loadProfile': '✅ 저장된 프로필로 시작',

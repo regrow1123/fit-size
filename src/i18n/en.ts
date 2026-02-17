@@ -4,8 +4,11 @@ const en: TranslationDict = {
   // App
   'app.subtitle': 'Try on clothes online before you buy',
   'app.step.body': 'Body Setup',
-  'app.step.clothing': 'Clothing Measurements',
-  'app.step.result': 'Fitting Result',
+  'app.step.bodyDesc': 'Height & weight',
+  'app.step.clothing': 'Clothing',
+  'app.step.clothingDesc': 'Enter garment size',
+  'app.step.result': 'Result',
+  'app.step.resultDesc': 'Check fit',
   'app.welcome.title': '👋 Welcome back!',
   'app.welcome.desc': 'You have a saved profile. Start fitting new clothes right away.',
   'app.welcome.loadProfile': '✅ Start with saved profile',
