@@ -119,19 +119,36 @@ export default function App() {
           </div>
         )}
 
-        {/* Step indicator */}
+        {/* Step indicator — clickable to navigate back */}
         {step !== 'mode' && (
           <div className="flex gap-2 mb-8 text-sm">
-            {(['body', 'clothing', 'result'] as Step[]).map((s, i) => (
-              <div
-                key={s}
-                className={`flex-1 text-center py-2 rounded ${
-                  step === s ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-500'
-                }`}
-              >
-                {i + 1}. {stepLabels[i]}
-              </div>
-            ))}
+            {(['body', 'clothing', 'result'] as Step[]).map((s, i) => {
+              const stepOrder: Step[] = ['body', 'clothing', 'result'];
+              const currentIdx = stepOrder.indexOf(step);
+              const targetIdx = i;
+              // Can navigate to current or any previous step; also to next if data exists
+              const canGo = targetIdx <= currentIdx
+                || (targetIdx === 1 && body !== null)
+                || (targetIdx === 2 && body !== null && clothing !== null);
+              const isCurrent = step === s;
+
+              return (
+                <button
+                  key={s}
+                  disabled={!canGo}
+                  onClick={() => { if (canGo && !isCurrent) setStep(s); }}
+                  className={`flex-1 text-center py-2 rounded transition cursor-pointer ${
+                    isCurrent
+                      ? 'bg-blue-600 text-white font-bold'
+                      : canGo
+                        ? 'bg-blue-100 text-blue-700 hover:bg-blue-200'
+                        : 'bg-gray-200 text-gray-400 !cursor-not-allowed'
+                  }`}
+                >
+                  {i + 1}. {stepLabels[i]}
+                </button>
+              );
+            })}
           </div>
         )}
 
