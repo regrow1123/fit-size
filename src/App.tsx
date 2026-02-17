@@ -74,17 +74,21 @@ export default function App() {
             <p className="text-blue-100 text-sm">{t('app.subtitle')}</p>
           </div>
           <div className="flex gap-1">
-            {LOCALES.map(l => (
-              <button
-                key={l}
-                onClick={() => setLocale(l)}
-                className={`px-2 py-1 rounded text-xs font-medium cursor-pointer transition ${
-                  locale === l ? 'bg-white text-blue-600' : 'bg-blue-500 text-blue-100 hover:bg-blue-400'
-                }`}
-              >
-                {t(`lang.${l}`)}
-              </button>
-            ))}
+            {LOCALES.map(l => {
+              const flag: Record<string, string> = { ko: '🇰🇷', en: '🇺🇸', ja: '🇯🇵' };
+              return (
+                <button
+                  key={l}
+                  onClick={() => setLocale(l)}
+                  className={`w-8 h-8 rounded-full text-lg flex items-center justify-center cursor-pointer transition ${
+                    locale === l ? 'bg-white/25 ring-2 ring-white' : 'hover:bg-blue-500'
+                  }`}
+                  title={t(`lang.${l}`)}
+                >
+                  {flag[l]}
+                </button>
+              );
+            })}
           </div>
         </div>
       </header>
