@@ -15,6 +15,7 @@ export function calculateAvatarDimensions(body: BodyMeasurements): AvatarDimensi
     body.shoulderWidth,
     body.chestCirc,
     body.waistCirc,
+    body.hipCirc,
   );
 
   const scale = (body.height / 180) * SCALE;

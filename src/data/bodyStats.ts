@@ -1,27 +1,104 @@
 /**
- * 성별/키/몸무게 기반 체형 통계 데이터
- * 출처: 한국인 인체치수조사 (Size Korea) 기반 근사값
- * 
- * 키(cm)와 몸무게(kg)로부터 각 부위 치수를 추정
+ * 체형 추정 엔진 v2
+ *
+ * 1단계: Size Korea 통계 테이블에서 키/몸무게 기반 IDW 보간
+ * 2단계: 사용자 직접 입력값으로 덮어쓰기
+ * 3단계: 옷 역추정 데이터가 통계와 차이나면, 상관관계 기반으로 다른 부위도 보정
  */
 
-interface BodyStatRange {
-  chestCirc: number;   // 가슴둘레 cm
-  waistCirc: number;   // 허리둘레 cm
-  hipCirc: number;     // 엉덩이둘레 cm
-  shoulderWidth: number; // 어깨너비 cm
-  armLength: number;   // 팔길이 cm
-  torsoLength: number; // 몸통길이 (어깨~허리) cm
-  neckCirc: number;    // 목둘레 cm
+import { lookupSizeKorea } from './sizeKoreaTable';
+
+export interface BodyStatRange {
+  chestCirc: number;
+  waistCirc: number;
+  hipCirc: number;
+  shoulderWidth: number;
+  armLength: number;
+  torsoLength: number;
+  neckCirc: number;
 }
 
-// BMI 기반으로 체형 보정 계수 산출
-function getBmiFactor(height: number, weight: number): number {
-  const bmi = weight / ((height / 100) ** 2);
-  // BMI 22를 기준(1.0)으로 보정
-  return bmi / 22;
-}
+/**
+ * 부위 간 상관관계 테이블
+ *
+ * 예: 사용자의 가슴둘레가 통계보다 10% 크면,
+ *     허리둘레도 corr * 10% 만큼 보정.
+ *
+ * 값은 피어슨 상관계수의 근사치 (0~1).
+ * 같은 "둘레 계열"끼리는 높고, 길이/너비는 낮음.
+ */
+type BodyKey = keyof BodyStatRange;
 
+const CORRELATION: Record<BodyKey, Partial<Record<BodyKey, number>>> = {
+  chestCirc: {
+    waistCirc: 0.75,
+    hipCirc: 0.65,
+    shoulderWidth: 0.50,
+    neckCirc: 0.70,
+    armLength: 0.10,
+    torsoLength: 0.15,
+  },
+  waistCirc: {
+    chestCirc: 0.75,
+    hipCirc: 0.70,
+    shoulderWidth: 0.30,
+    neckCirc: 0.65,
+    armLength: 0.05,
+    torsoLength: 0.10,
+  },
+  hipCirc: {
+    chestCirc: 0.65,
+    waistCirc: 0.70,
+    shoulderWidth: 0.35,
+    neckCirc: 0.50,
+    armLength: 0.08,
+    torsoLength: 0.12,
+  },
+  shoulderWidth: {
+    chestCirc: 0.50,
+    waistCirc: 0.30,
+    hipCirc: 0.35,
+    neckCirc: 0.45,
+    armLength: 0.40,
+    torsoLength: 0.30,
+  },
+  neckCirc: {
+    chestCirc: 0.70,
+    waistCirc: 0.65,
+    hipCirc: 0.50,
+    shoulderWidth: 0.45,
+    armLength: 0.10,
+    torsoLength: 0.10,
+  },
+  armLength: {
+    chestCirc: 0.10,
+    waistCirc: 0.05,
+    hipCirc: 0.08,
+    shoulderWidth: 0.40,
+    neckCirc: 0.10,
+    torsoLength: 0.55,
+  },
+  torsoLength: {
+    chestCirc: 0.15,
+    waistCirc: 0.10,
+    hipCirc: 0.12,
+    shoulderWidth: 0.30,
+    neckCirc: 0.10,
+    armLength: 0.55,
+  },
+};
+
+/**
+ * 메인 추정 함수
+ *
+ * @param gender 성별
+ * @param height 키 (cm)
+ * @param weight 몸무게 (kg)
+ * @param shoulderWidthInput 사용자 입력 어깨너비 (선택)
+ * @param chestCircInput 사용자 입력 가슴둘레 (선택)
+ * @param waistCircInput 사용자 입력 허리둘레 (선택)
+ * @param hipCircInput 사용자 입력 엉덩이둘레 (선택)
+ */
 export function estimateBodyDimensions(
   gender: 'male' | 'female',
   height: number,
@@ -29,42 +106,69 @@ export function estimateBodyDimensions(
   shoulderWidthInput?: number,
   chestCircInput?: number,
   waistCircInput?: number,
+  hipCircInput?: number,
 ): BodyStatRange {
-  const bmiFactor = getBmiFactor(height, weight);
-  const heightRatio = height / 170; // 170cm 기준
+  // ── 1단계: Size Korea 통계 기반 기본값 ──
+  const stats = lookupSizeKorea(gender, height, weight);
+  const baseline: BodyStatRange = {
+    chestCirc: stats.chestCirc,
+    waistCirc: stats.waistCirc,
+    hipCirc: stats.hipCirc,
+    shoulderWidth: stats.shoulderWidth,
+    neckCirc: stats.neckCirc,
+    armLength: stats.armLength,
+    torsoLength: stats.torsoLength,
+  };
 
-  if (gender === 'male') {
-    const base: BodyStatRange = {
-      chestCirc: 95 * bmiFactor,
-      waistCirc: 82 * bmiFactor,
-      hipCirc: 95 * bmiFactor,
-      shoulderWidth: 45 * heightRatio,
-      armLength: 58 * heightRatio,
-      torsoLength: 44 * heightRatio,
-      neckCirc: 37 * bmiFactor,
-    };
+  // 기본값 복사 (보정 전)
+  const result: BodyStatRange = { ...baseline };
 
-    // 사용자 입력값이 있으면 덮어쓰기
-    if (shoulderWidthInput) base.shoulderWidth = shoulderWidthInput;
-    if (chestCircInput) base.chestCirc = chestCircInput;
-    if (waistCircInput) base.waistCirc = waistCircInput;
+  // ── 2단계: 사용자 입력값 수집 + 편차 계산 ──
+  const overrides: Partial<Record<BodyKey, number>> = {};
+  if (shoulderWidthInput) overrides.shoulderWidth = shoulderWidthInput;
+  if (chestCircInput) overrides.chestCirc = chestCircInput;
+  if (waistCircInput) overrides.waistCirc = waistCircInput;
+  if (hipCircInput) overrides.hipCirc = hipCircInput;
 
-    return base;
-  } else {
-    const base: BodyStatRange = {
-      chestCirc: 86 * bmiFactor,
-      waistCirc: 70 * bmiFactor,
-      hipCirc: 93 * bmiFactor,
-      shoulderWidth: 40 * heightRatio,
-      armLength: 52 * heightRatio,
-      torsoLength: 40 * heightRatio,
-      neckCirc: 32 * bmiFactor,
-    };
-
-    if (shoulderWidthInput) base.shoulderWidth = shoulderWidthInput;
-    if (chestCircInput) base.chestCirc = chestCircInput;
-    if (waistCircInput) base.waistCirc = waistCircInput;
-
-    return base;
+  // 편차 비율 수집: (입력값 - 통계값) / 통계값
+  const deviations: Partial<Record<BodyKey, number>> = {};
+  for (const [key, inputVal] of Object.entries(overrides) as [BodyKey, number][]) {
+    const statVal = baseline[key];
+    if (statVal > 0) {
+      deviations[key] = (inputVal - statVal) / statVal;
+    }
+    // 입력값으로 덮어쓰기
+    result[key] = inputVal;
   }
+
+  // ── 3단계: 편차 전파 보정 ──
+  // 입력하지 않은 부위에 대해, 입력된 부위들의 편차를 상관관계 가중 평균으로 전파
+  const allKeys: BodyKey[] = ['chestCirc', 'waistCirc', 'hipCirc', 'shoulderWidth', 'neckCirc', 'armLength', 'torsoLength'];
+  const inputKeys = Object.keys(overrides) as BodyKey[];
+  const nonInputKeys = allKeys.filter(k => !inputKeys.includes(k));
+
+  for (const targetKey of nonInputKeys) {
+    let weightedDeviation = 0;
+    let totalCorrelation = 0;
+
+    for (const sourceKey of inputKeys) {
+      const dev = deviations[sourceKey];
+      const corr = CORRELATION[sourceKey]?.[targetKey] ?? 0;
+      if (dev !== undefined && corr > 0) {
+        weightedDeviation += dev * corr;
+        totalCorrelation += corr;
+      }
+    }
+
+    if (totalCorrelation > 0) {
+      const avgDeviation = weightedDeviation / totalCorrelation;
+      // 보정 강도를 줄임 (상관관계가 약할수록 덜 보정)
+      // 최대 상관 합이 클수록 확신이 높으므로 더 강하게 보정
+      const confidence = Math.min(totalCorrelation / inputKeys.length, 1);
+      const adjustment = avgDeviation * confidence;
+      result[targetKey] = Math.round((baseline[targetKey] * (1 + adjustment)) * 10) / 10;
+    }
+  }
+
+  return result;
 }
