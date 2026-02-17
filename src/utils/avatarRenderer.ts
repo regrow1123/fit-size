@@ -163,15 +163,51 @@ export function drawAvatar(
       axillaX + s * 2, axillaY + 5,
       axillaX, axillaY,
     );
-    // 겨드랑이 → 어깨 내측 (어깨 위로 올라감)
-    ctx.quadraticCurveTo(
-      axillaX + s * (shH - chH) * 0.3, d.shoulderY + 8,
+    // 겨드랑이 → 몸통 가슴라인을 따라 올라감 → 어깨 내측
+    // (겨드랑이 갭을 없애기 위해 몸통 측면을 포함)
+    ctx.bezierCurveTo(
+      axillaX + s * 1, axillaY - (axillaY - d.shoulderY) * 0.3,
+      cx + s * (shH - 3), d.shoulderY + (axillaY - d.shoulderY) * 0.2,
       sx + s * upH * 0.5, d.shoulderY - 2,
     );
 
     ctx.closePath();
     ctx.fill();
     ctx.stroke();
+  }
+
+  // ═══ 겨드랑이 삼각형 채우기 (팔-몸통 갭 제거) ═══
+  for (const s of [-1, 1]) {
+    const sx = cx + s * shH;
+    const axX = cx + s * chH;
+    const midDist = (d.elbowY - d.shoulderY) * 0.4;
+    const midArmX = sx + s * midDist * sinA;
+    const midArmY = d.shoulderY + midDist * cosA;
+    const innerBicep = d.upperArmWidth / 2 * 0.9;
+
+    ctx.beginPath();
+    // 어깨 끝
+    ctx.moveTo(sx, d.shoulderY);
+    // 몸통 측면: 어깨 → 가슴
+    ctx.bezierCurveTo(
+      sx - s * 1, d.shoulderY + (d.chestY - d.shoulderY) * 0.3,
+      axX + s * 4, d.chestY - (d.chestY - d.shoulderY) * 0.15,
+      axX, d.chestY,
+    );
+    // 가슴에서 팔 내측으로
+    ctx.bezierCurveTo(
+      axX + s * 2, d.chestY - 5,
+      midArmX - s * innerBicep * 0.9, midArmY + 10,
+      midArmX - s * innerBicep, midArmY,
+    );
+    // 팔 내측을 따라 어깨로 복귀
+    ctx.bezierCurveTo(
+      midArmX - s * innerBicep * 0.85, midArmY - (midArmY - d.shoulderY) * 0.5,
+      sx + s * d.upperArmWidth / 2 * 0.3, d.shoulderY + 5,
+      sx, d.shoulderY,
+    );
+    ctx.closePath();
+    ctx.fill();
   }
 
   // ════════════════════════════════════════
