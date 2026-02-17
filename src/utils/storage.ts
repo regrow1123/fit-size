@@ -25,10 +25,27 @@ export interface WardrobeData {
   profile: SavedBodyProfile | null;
 }
 
-// ─── In-memory store ───
-// 세션 중에만 유지. 영속성은 Firebase 또는 텍스트 내보내기/불러오기로.
+// ─── localStorage persistence ───
 
-let store: WardrobeData = { version: 1, garments: [], profile: null };
+const LS_KEY = 'fitsize_wardrobe';
+
+function loadFromLocalStorage(): WardrobeData {
+  try {
+    const raw = localStorage.getItem(LS_KEY);
+    if (!raw) return { version: 1, garments: [], profile: null };
+    const data = JSON.parse(raw) as WardrobeData;
+    if (data.version === 1 && Array.isArray(data.garments)) return data;
+  } catch { /* ignore */ }
+  return { version: 1, garments: [], profile: null };
+}
+
+function persistToLocalStorage(): void {
+  try { localStorage.setItem(LS_KEY, JSON.stringify(store)); } catch { /* ignore */ }
+}
+
+// ─── In-memory store (initialized from localStorage) ───
+
+let store: WardrobeData = loadFromLocalStorage();
 
 /** 변경 리스너 (App에서 re-render 트리거용) */
 type Listener = () => void;
@@ -38,6 +55,7 @@ export function subscribe(fn: Listener): () => void {
   return () => listeners.delete(fn);
 }
 function notify() {
+  persistToLocalStorage();
   listeners.forEach(fn => fn());
 }
 

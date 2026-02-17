@@ -4,7 +4,7 @@ import ClothingInputForm from './components/ClothingInputForm';
 import FittingCanvas from './components/FittingCanvas';
 import ReverseInputForm from './components/ReverseInputForm';
 import ProductRecommendations from './components/ProductRecommendations';
-import { importWardrobeFromText, exportWardrobeText, subscribe } from './utils/storage';
+import { importWardrobeFromText, exportWardrobeText, subscribe, loadWardrobe } from './utils/storage';
 import { useTranslation, type Locale } from './i18n';
 import { useAuth, saveToCloud, loadFromCloud } from './firebase';
 
@@ -100,7 +100,10 @@ export default function App() {
   const { user, loading: authLoading, signInWithGoogle, signOut, isConfigured: authConfigured } = useAuth();
   const [cloudLoaded, setCloudLoaded] = useState(false);
   const [step, setStep] = useState<Step>('body');
-  const [body, setBody] = useState<BodyMeasurements | null>(null);
+  const [body, setBody] = useState<BodyMeasurements | null>(() => {
+    const w = loadWardrobe();
+    return w.profile?.bodyMeasurements ?? null;
+  });
   const [clothing, setClothing] = useState<Map<string, number> | null>(null);
   const [category, setCategory] = useState<ClothingCategory>('tshirt');
   const [importMsg, setImportMsg] = useState<string | null>(null);
@@ -121,12 +124,15 @@ export default function App() {
     });
   }, [user, cloudLoaded]);
 
-  // 로그인 시 클라우드에서 로드
+  // 로그인 시 클라우드에서 로드 → 저장된 프로필을 body state에 반영
   useEffect(() => {
     if (!user || cloudLoaded) return;
     (async () => {
-      await loadFromCloud(user);
+      const data = await loadFromCloud(user);
       setCloudLoaded(true);
+      if (data?.profile?.bodyMeasurements) {
+        setBody(data.profile.bodyMeasurements);
+      }
     })();
   }, [user, cloudLoaded]);
 
