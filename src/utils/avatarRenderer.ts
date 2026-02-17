@@ -40,6 +40,10 @@ export function drawAvatar(
   // ════════════════════════════════════════
   // 1. ARMS (뒤에 먼저)
   // ════════════════════════════════════════
+  const ARM_ANGLE = 20 * Math.PI / 180; // 팔 벌림 각도
+  const sinA = Math.sin(ARM_ANGLE);
+  const cosA = Math.cos(ARM_ANGLE);
+
   for (const s of [-1, 1]) {
     // 어깨 끝점
     const sx = cx + s * shH;
@@ -47,18 +51,23 @@ export function drawAvatar(
     const axillaX = cx + s * chH;
     const axillaY = d.chestY;
 
-    // 팔 중심선: 살짝 바깥으로 벌어짐
-    const elX = sx + s * 12;
-    const wrX = sx + s * 18;
+    // 팔 중심선: 각도 기반 (어깨에서 벌림)
+    const elbowDist = d.elbowY - d.shoulderY;
+    const wristDist = d.wristY - d.shoulderY;
+    const elX = sx + s * elbowDist * sinA;
+    const elY = d.shoulderY + elbowDist * cosA;
+    const wrX = sx + s * wristDist * sinA;
+    const wrY = d.shoulderY + wristDist * cosA;
 
     const upH = d.upperArmWidth / 2;
     const elH = d.elbowWidth / 2;
     const faH = d.forearmWidth / 2;
     const wrH = d.wristWidth / 2;
 
-    // 삼두근 볼륨 포인트 (상완 중간, 외측으로 볼록)
-    const midArmY = d.shoulderY + (d.elbowY - d.shoulderY) * 0.4;
-    const midArmX = sx + s * (12 * 0.4); // 팔 중심선 중간
+    // 삼두근 볼륨 포인트 (상완 40% 지점)
+    const midDist = elbowDist * 0.4;
+    const midArmX = sx + s * midDist * sinA;
+    const midArmY = d.shoulderY + midDist * cosA;
     const bicepBulge = upH * 1.2; // 이두근/삼두근 볼륨
 
     ctx.beginPath();
@@ -74,27 +83,27 @@ export function drawAvatar(
     );
     // 상완 → 팔꿈치 (살짝 테이퍼)
     ctx.bezierCurveTo(
-      midArmX + s * bicepBulge * 0.9, midArmY + (d.elbowY - midArmY) * 0.5,
-      elX + s * elH * 1.1, d.elbowY - (d.elbowY - midArmY) * 0.2,
-      elX + s * elH, d.elbowY,
+      midArmX + s * bicepBulge * 0.9, midArmY + (elY - midArmY) * 0.5,
+      elX + s * elH * 1.1, elY - (elY - midArmY) * 0.2,
+      elX + s * elH, elY,
     );
     // 전완: 팔꿈치 → 손목 (점진적 테이퍼)
     ctx.bezierCurveTo(
-      elX + s * faH * 1.05, d.elbowY + (d.wristY - d.elbowY) * 0.2,
-      wrX + s * wrH * 1.15, d.wristY - (d.wristY - d.elbowY) * 0.2,
-      wrX + s * wrH, d.wristY,
+      elX + s * faH * 1.05, elY + (wrY - elY) * 0.2,
+      wrX + s * wrH * 1.15, wrY - (wrY - elY) * 0.2,
+      wrX + s * wrH, wrY,
     );
 
     // ── 손 ──
     const handW = wrH * 1.6;
     const handLen = d.upperArmWidth * 1.2;
-    const handEndY = d.wristY + handLen;
-    const palmEndY = d.wristY + handLen * 0.6;
+    const handEndY = wrY + handLen;
+    const palmEndY = wrY + handLen * 0.6;
     const fingerTipY = handEndY;
 
     // 손목 → 손바닥 외측
     ctx.bezierCurveTo(
-      wrX + s * handW, d.wristY + 3,
+      wrX + s * handW, wrY + 3,
       wrX + s * handW * 1.05, palmEndY - 5,
       wrX + s * handW * 0.95, palmEndY,
     );
@@ -122,30 +131,30 @@ export function drawAvatar(
       wrX - s * handW * 0.2, palmEndY - 2,
     );
     // 엄지 (내측, 짧고 옆으로)
-    const thumbY = d.wristY + handLen * 0.2;
+    const thumbY = wrY + handLen * 0.2;
     ctx.quadraticCurveTo(
       wrX - s * handW * 0.4, thumbY + 8,
       wrX - s * handW * 0.5, thumbY + 3,
     );
     ctx.quadraticCurveTo(
       wrX - s * handW * 0.45, thumbY - 3,
-      wrX - s * wrH * 0.8, d.wristY + 2,
+      wrX - s * wrH * 0.8, wrY + 2,
     );
 
     // ── 내측 (손목 → 전완 → 팔꿈치 → 겨드랑이) ──
     // 손목에서 올라감
-    ctx.lineTo(wrX - s * wrH, d.wristY);
+    ctx.lineTo(wrX - s * wrH, wrY);
     // 전완 내측 (약간 볼록 — 전완 근육)
     ctx.bezierCurveTo(
-      wrX - s * wrH * 1.1, d.wristY - (d.wristY - d.elbowY) * 0.2,
-      elX - s * faH * 0.85, d.elbowY + (d.wristY - d.elbowY) * 0.2,
-      elX - s * elH * 0.6, d.elbowY,
+      wrX - s * wrH * 1.1, wrY - (wrY - elY) * 0.2,
+      elX - s * faH * 0.85, elY + (wrY - elY) * 0.2,
+      elX - s * elH * 0.6, elY,
     );
     // 팔꿈치 → 상완 내측 (이두근 볼록)
     const innerBicep = upH * 0.9;
     ctx.bezierCurveTo(
-      elX - s * elH * 0.55, d.elbowY - (d.elbowY - midArmY) * 0.2,
-      midArmX - s * innerBicep * 0.85, midArmY + (d.elbowY - midArmY) * 0.3,
+      elX - s * elH * 0.55, elY - (elY - midArmY) * 0.2,
+      midArmX - s * innerBicep * 0.85, midArmY + (elY - midArmY) * 0.3,
       midArmX - s * innerBicep, midArmY,
     );
     // 상완 내측 → 겨드랑이
