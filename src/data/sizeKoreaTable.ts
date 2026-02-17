@@ -161,7 +161,7 @@ export function lookupSizeKorea(
     for (let i = 0; i < topN.length; i++) {
       val += (topN[i].entry[key] as number) * weights[i];
     }
-    (result as Record<string, unknown>)[key] = Math.round((val / totalWeight) * 10) / 10;
+    (result as unknown as Record<string, number>)[key] = Math.round((val / totalWeight) * 10) / 10;
   }
 
   return result;
