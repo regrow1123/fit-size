@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo, useEffect } from 'react';
+import { useState, useCallback, useMemo, useEffect, type ReactNode } from 'react';
 import ClothingSketch from './ClothingSketch';
 import type { ClothingCategory, PointMeasurement, BodyMeasurements } from '../types';
 import { CLOTHING_CATEGORIES } from '../data/anchorPoints';
@@ -38,6 +38,66 @@ const CATEGORY_ICONS: Record<ClothingCategory, string> = {
   tshirt: '👕', long_sleeve: '🧥', jacket: '🧥', pants: '👖', dress: '👗',
 };
 
+/** Numbered section with header + optional tag + collapsible */
+function Section({
+  num,
+  title,
+  tag,
+  tagColor = 'blue',
+  desc,
+  collapsible,
+  defaultOpen = true,
+  children,
+}: {
+  num: number;
+  title: string;
+  tag?: string;
+  tagColor?: 'blue' | 'gray' | 'green';
+  desc?: string;
+  collapsible?: boolean;
+  defaultOpen?: boolean;
+  children: ReactNode;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
+  const tagColors = {
+    blue: 'bg-blue-100 text-blue-700',
+    gray: 'bg-gray-100 text-gray-500',
+    green: 'bg-green-100 text-green-700',
+  };
+
+  return (
+    <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
+      <div
+        className={`flex items-center gap-3 px-4 py-3 bg-gray-50 border-b border-gray-200 ${collapsible ? 'cursor-pointer hover:bg-gray-100 transition' : ''}`}
+        onClick={collapsible ? () => setOpen(!open) : undefined}
+      >
+        <span className="flex-shrink-0 w-7 h-7 rounded-full bg-blue-600 text-white text-sm font-bold flex items-center justify-center">
+          {num}
+        </span>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <h3 className="text-sm font-bold text-gray-800">{title}</h3>
+            {tag && (
+              <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${tagColors[tagColor]}`}>
+                {tag}
+              </span>
+            )}
+          </div>
+          {desc && <p className="text-xs text-gray-400 mt-0.5">{desc}</p>}
+        </div>
+        {collapsible && (
+          <span className="text-gray-400 text-sm">{open ? '▲' : '▼'}</span>
+        )}
+      </div>
+      {(!collapsible || open) && (
+        <div className="p-4 space-y-3">
+          {children}
+        </div>
+      )}
+    </div>
+  );
+}
+
 let garmentIdCounter = Date.now();
 let measurementIdCounter = 1;
 
@@ -55,7 +115,6 @@ export default function ReverseInputForm({ onSubmit }: Props) {
   const [garmentName, setGarmentName] = useState('');
   const [editingNameId, setEditingNameId] = useState<string | null>(null);
   const [editingNameValue, setEditingNameValue] = useState('');
-  const [showDirectInput, setShowDirectInput] = useState(false);
   const [directShoulder, setDirectShoulder] = useState<string>('');
   const [directChest, setDirectChest] = useState<string>('');
   const [directWaist, setDirectWaist] = useState<string>('');
@@ -251,13 +310,9 @@ export default function ReverseInputForm({ onSubmit }: Props) {
   };
 
   return (
-    <div className="space-y-4">
-      <h2 className="text-lg font-bold">{t('reverse.title')}</h2>
-      <p className="text-sm text-gray-500">{t('reverse.desc')}</p>
-
-      {/* Basic info */}
-      <div className="bg-gray-50 rounded-lg p-3 space-y-3">
-        <h3 className="text-sm font-bold text-gray-700">{t('reverse.basicInfo')}</h3>
+    <div className="space-y-5">
+      {/* ── SECTION 1: 기본 정보 ── */}
+      <Section num={1} title={t('reverse.basicInfo')} tag={t('reverse.tagRequired')}>
         <div className="flex gap-4">
           <label className="flex items-center gap-1 text-sm">
             <input type="radio" checked={gender === 'male'} onChange={() => setGender('male')} /> {t('body.gender.male')}
@@ -276,41 +331,37 @@ export default function ReverseInputForm({ onSubmit }: Props) {
             <input type="number" value={weight} onChange={e => setWeight(+e.target.value)} className="w-full border rounded px-2 py-1 text-sm" />
           </div>
         </div>
-      </div>
+      </Section>
 
-      {/* Direct body measurement input (optional) */}
-      <div className="bg-gray-50 rounded-lg p-3 space-y-3">
-        <button
-          onClick={() => setShowDirectInput(!showDirectInput)}
-          className="flex items-center justify-between w-full text-sm font-bold text-gray-700 cursor-pointer"
-        >
-          <span>{t('reverse.directInput')}</span>
-          <span className="text-gray-400">{showDirectInput ? '▲' : '▼'}</span>
-        </button>
-        {showDirectInput && (
-          <>
-            <p className="text-xs text-gray-400">{t('reverse.directInputDesc')}</p>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs text-gray-500">{t('reverse.shoulder')}</label>
-                <input type="number" value={directShoulder} placeholder={t('reverse.autoEstimate')} onChange={e => setDirectShoulder(e.target.value)} className="w-full border rounded px-2 py-1 text-sm" />
-              </div>
-              <div>
-                <label className="block text-xs text-gray-500">{t('reverse.chest')}</label>
-                <input type="number" value={directChest} placeholder={t('reverse.autoEstimate')} onChange={e => setDirectChest(e.target.value)} className="w-full border rounded px-2 py-1 text-sm" />
-              </div>
-              <div>
-                <label className="block text-xs text-gray-500">{t('reverse.waist')}</label>
-                <input type="number" value={directWaist} placeholder={t('reverse.autoEstimate')} onChange={e => setDirectWaist(e.target.value)} className="w-full border rounded px-2 py-1 text-sm" />
-              </div>
-              <div>
-                <label className="block text-xs text-gray-500">{t('reverse.hip')}</label>
-                <input type="number" value={directHip} placeholder={t('reverse.autoEstimate')} onChange={e => setDirectHip(e.target.value)} className="w-full border rounded px-2 py-1 text-sm" />
-              </div>
+      {/* ── SECTION 2: 체형 보정 (선택) ── */}
+      <Section num={2} title={t('reverse.refineTitle')} tag={t('reverse.tagOptional')} tagColor="gray" desc={t('reverse.refineDesc')} collapsible defaultOpen={garments.length > 0 || !!directShoulder || !!directChest || !!directWaist || !!directHip}>
+        {/* Direct measurement inputs */}
+        <div className="space-y-2">
+          <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wide">{t('reverse.directInput')}</h4>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs text-gray-500">{t('reverse.shoulder')}</label>
+              <input type="number" value={directShoulder} placeholder={t('reverse.autoEstimate')} onChange={e => setDirectShoulder(e.target.value)} className="w-full border rounded px-2 py-1 text-sm" />
             </div>
-          </>
-        )}
-      </div>
+            <div>
+              <label className="block text-xs text-gray-500">{t('reverse.chest')}</label>
+              <input type="number" value={directChest} placeholder={t('reverse.autoEstimate')} onChange={e => setDirectChest(e.target.value)} className="w-full border rounded px-2 py-1 text-sm" />
+            </div>
+            <div>
+              <label className="block text-xs text-gray-500">{t('reverse.waist')}</label>
+              <input type="number" value={directWaist} placeholder={t('reverse.autoEstimate')} onChange={e => setDirectWaist(e.target.value)} className="w-full border rounded px-2 py-1 text-sm" />
+            </div>
+            <div>
+              <label className="block text-xs text-gray-500">{t('reverse.hip')}</label>
+              <input type="number" value={directHip} placeholder={t('reverse.autoEstimate')} onChange={e => setDirectHip(e.target.value)} className="w-full border rounded px-2 py-1 text-sm" />
+            </div>
+          </div>
+        </div>
+
+        <div className="border-t border-gray-200 my-3" />
+
+        {/* Garment-based estimation */}
+        <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wide">{t('reverse.garmentSection')}</h4>
 
       {/* Saved garments */}
       {garments.length > 0 && (
@@ -524,23 +575,25 @@ export default function ReverseInputForm({ onSubmit }: Props) {
         </button>
       )}
 
-      {/* Estimated body dimensions */}
-      <BodyStatsPanel
-        gender={gender}
-        height={height}
-        weight={weight}
-        garmentEstimates={estimates}
-        totalDataPoints={Object.values(estimates).reduce((sum, e) => sum + (e?.count ?? 0), 0)}
-      />
+      </Section>
 
-      {/* Submit */}
-      <button
-        onClick={handleSubmit}
-        disabled={!hasEstimates}
-        className="w-full bg-green-600 text-white py-3 rounded-lg font-bold hover:bg-green-700 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed transition"
-      >
-        {t('reverse.generateAvatar')}
-      </button>
+      {/* ── SECTION 3: 추정 결과 + 제출 ── */}
+      <Section num={3} title={t('reverse.estimatedStats')} tag={t('reverse.tagResult')} tagColor="green">
+        <BodyStatsPanel
+          gender={gender}
+          height={height}
+          weight={weight}
+          garmentEstimates={estimates}
+          totalDataPoints={Object.values(estimates).reduce((sum, e) => sum + (e?.count ?? 0), 0)}
+        />
+        <button
+          onClick={handleSubmit}
+          disabled={!hasEstimates}
+          className="w-full bg-green-600 text-white py-3 rounded-lg font-bold hover:bg-green-700 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed transition mt-3"
+        >
+          {t('reverse.generateAvatar')}
+        </button>
+      </Section>
     </div>
   );
 }
@@ -580,19 +633,16 @@ function BodyStatsPanel({ gender, height, weight, garmentEstimates }: BodyStatsP
   ];
 
   return (
-    <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 space-y-3">
-      <h3 className="text-sm font-bold text-gray-700">{t('reverse.estimatedStats')}</h3>
-      <div className="grid grid-cols-2 gap-x-4 gap-y-1.5">
-        {items.map(item => (
-          <div key={item.key} className="flex items-center justify-between text-sm py-1">
-            <span className="text-gray-500">{t(item.labelKey)}</span>
-            <span className={`font-mono font-semibold ${item.fromGarment ? 'text-blue-600' : 'text-gray-800'}`}>
-              {item.value.toFixed(1)}
-              <span className="text-xs text-gray-400 ml-0.5">cm</span>
-            </span>
-          </div>
-        ))}
-      </div>
+    <div className="grid grid-cols-2 gap-x-4 gap-y-1.5">
+      {items.map(item => (
+        <div key={item.key} className="flex items-center justify-between text-sm py-1">
+          <span className="text-gray-500">{t(item.labelKey)}</span>
+          <span className={`font-mono font-semibold ${item.fromGarment ? 'text-blue-600' : 'text-gray-800'}`}>
+            {item.value.toFixed(1)}
+            <span className="text-xs text-gray-400 ml-0.5">cm</span>
+          </span>
+        </div>
+      ))}
     </div>
   );
 }
