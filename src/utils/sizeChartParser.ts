@@ -114,10 +114,15 @@ export function parseSizeChart(text: string): ParsedSizeChart | null {
   const lines = text.trim().split('\n').map(l => l.trim()).filter(l => l.length > 0);
   if (lines.length < 2) return null;
 
-  // 구분자 감지: 탭이 있으면 탭, 아니면 2+공백
+  // 구분자 감지: 탭 → 세로선(|) → 2+공백
   const hasTab = lines[0].includes('\t');
+  const hasPipe = !hasTab && lines[0].includes('|');
   const splitLine = (line: string) =>
-    hasTab ? line.split('\t').map(s => s.trim()) : line.split(/\s{2,}/).map(s => s.trim());
+    hasTab
+      ? line.split('\t').map(s => s.trim())
+      : hasPipe
+        ? line.split('|').map(s => s.trim())
+        : line.split(/\s{2,}/).map(s => s.trim());
 
   const headerCells = splitLine(lines[0]);
   if (headerCells.length < 2) return null;
