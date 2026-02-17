@@ -113,6 +113,14 @@ export default function App() {
   // Subscribe to in-memory store changes
   useEffect(() => subscribe(() => setTick(t => t + 1)), []);
 
+  // Auto-save to cloud on store changes
+  useEffect(() => {
+    if (!user || !cloudLoaded) return;
+    return subscribe(() => {
+      saveToCloud(user).catch(() => {});
+    });
+  }, [user, cloudLoaded]);
+
   // 로그인 시 클라우드에서 로드
   useEffect(() => {
     if (!user || cloudLoaded) return;
@@ -125,7 +133,6 @@ export default function App() {
   const handleBodySubmit = (b: BodyMeasurements) => {
     setBody(b);
     setStep('clothing');
-    if (user) saveToCloud(user).catch(() => {});
   };
 
   const handleClothingSubmit = (m: Map<string, number>, cat: ClothingCategory) => {
