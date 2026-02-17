@@ -106,12 +106,88 @@ function isSizeColumn(header: string): boolean {
   return SIZE_COLUMN_ALIASES.some(a => h.includes(a)) || h === '' || h === '-';
 }
 
+/** 사이즈 라벨로 인식할 수 있는 토큰 패턴 */
+const SIZE_LABEL_PATTERN = /^(XXS|XS|S|M|L|XL|XXL|XXXL|FREE|[0-9]{2,3})$/i;
+
+/**
+ * 한 줄로 붙여넣어진 사이즈표를 복원한다.
+ * 예: "M L XL 총장 어깨너비 가슴단면 소매길이 65 49 58 62 66 51 60 63 67 53 62 64"
+ * → 테이블 형태로 변환
+ */
+function tryParseFlattened(text: string): ParsedSizeChart | null {
+  // 공백으로 토큰화
+  const tokens = text.split(/\s+/).filter(t => t.length > 0);
+  if (tokens.length < 4) return null;
+
+  // 1) 헤더 후보 찾기 (정확 매칭만 — 부분 매칭은 "L"→"length" 같은 오탐 유발)
+  const headerIndices: number[] = [];
+  const headerKeys: string[] = [];
+  for (let i = 0; i < tokens.length; i++) {
+    const h = tokens[i].toLowerCase().trim()
+      .replace(/\(cm\)/g, '').replace(/\(단면\)/g, '').replace(/\s+/g, ' ').trim();
+    const key = aliasToKey.get(h);
+    if (key && !headerKeys.includes(key)) {
+      headerIndices.push(i);
+      headerKeys.push(key);
+    }
+  }
+  if (headerKeys.length < 1) return null;
+
+  // 2) 사이즈 라벨 찾기 (헤더 앞에 위치한 S/M/L/XL 등)
+  const firstHeaderIdx = headerIndices[0];
+  const sizeLabels: string[] = [];
+  for (let i = 0; i < firstHeaderIdx; i++) {
+    if (SIZE_LABEL_PATTERN.test(tokens[i])) {
+      sizeLabels.push(tokens[i]);
+    }
+  }
+  if (sizeLabels.length === 0) return null;
+
+  // 3) 숫자 추출 (헤더 뒤의 모든 숫자)
+  const lastHeaderIdx = headerIndices[headerIndices.length - 1];
+  const numbers: number[] = [];
+  for (let i = lastHeaderIdx + 1; i < tokens.length; i++) {
+    const n = parseFloat(tokens[i]);
+    if (!isNaN(n)) numbers.push(n);
+  }
+
+  // 숫자 개수 = 사이즈 수 × 헤더 수 여야 함
+  const nHeaders = headerKeys.length;
+  const nSizes = sizeLabels.length;
+  if (numbers.length !== nHeaders * nSizes && numbers.length !== nSizes * nHeaders) return null;
+
+  // 4) 테이블 구성 (행 우선: 각 사이즈별로 헤더 순서대로)
+  const headers = ['사이즈', ...headerIndices.map(i => tokens[i])];
+  const mappedKeys: (string | null)[] = [null, ...headerKeys];
+  const rows: SizeChartRow[] = [];
+
+  for (let s = 0; s < nSizes; s++) {
+    const measurements: Record<string, number> = {};
+    for (let h = 0; h < nHeaders; h++) {
+      const val = numbers[s * nHeaders + h];
+      if (val > 0) measurements[headerKeys[h]] = val;
+    }
+    if (Object.keys(measurements).length > 0) {
+      rows.push({ sizeLabel: sizeLabels[s], measurements });
+    }
+  }
+
+  return rows.length > 0 ? { headers, mappedKeys, rows } : null;
+}
+
 /**
  * 탭/공백 구분 텍스트를 파싱한다.
  * 첫 번째 행은 헤더, 나머지는 데이터 행.
+ * 한 줄로 붙여넣어진 경우도 자동 감지하여 처리.
  */
 export function parseSizeChart(text: string): ParsedSizeChart | null {
   const lines = text.trim().split('\n').map(l => l.trim()).filter(l => l.length > 0);
+
+  // 한 줄인 경우 flattened 파서 시도
+  if (lines.length === 1) {
+    return tryParseFlattened(lines[0]);
+  }
+
   if (lines.length < 2) return null;
 
   // 구분자 감지: 탭 → 세로선(|) → 2+공백

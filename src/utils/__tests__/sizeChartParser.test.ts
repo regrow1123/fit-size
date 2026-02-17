@@ -309,6 +309,52 @@ L\t68`;
   });
 });
 
+describe('flattened one-line paste (mobile)', () => {
+  it('무신사 모바일 복붙 — 상의', () => {
+    const text = 'cm 내 사이즈 M L XL 총장 어깨너비 가슴단면 소매길이 사이즈를 직접 입력해주세요 65 49 58 62 66 51 60 63 67 53 62 64';
+    const r = parseSizeChart(text);
+    expect(r).not.toBeNull();
+    expect(r!.rows).toHaveLength(3);
+    expect(r!.rows[0].sizeLabel).toBe('M');
+    expect(r!.rows[0].measurements).toEqual({
+      totalLength: 65, shoulderWidth: 49, chestWidth: 58, sleeveLength: 62,
+    });
+    expect(r!.rows[2].sizeLabel).toBe('XL');
+    expect(r!.rows[2].measurements.totalLength).toBe(67);
+  });
+
+  it('S M L + 어깨 가슴 총장', () => {
+    const text = 'S M L 어깨너비 가슴단면 총장 42 50 65 44 53 68 46 56 71';
+    const r = parseSizeChart(text);
+    expect(r).not.toBeNull();
+    expect(r!.rows).toHaveLength(3);
+    expect(r!.rows[0].measurements.shoulderWidth).toBe(42);
+    expect(r!.rows[1].sizeLabel).toBe('M');
+  });
+
+  it('숫자 사이즈 (95 100 105)', () => {
+    const text = '95 100 105 어깨너비 가슴단면 총장 44 52 68 46 54 70 48 56 72';
+    const r = parseSizeChart(text);
+    expect(r).not.toBeNull();
+    expect(r!.rows).toHaveLength(3);
+    expect(r!.rows[0].sizeLabel).toBe('95');
+  });
+
+  it('FREE 사이즈', () => {
+    const text = 'FREE 어깨 가슴 총장 소매길이 46 54 70 23';
+    const r = parseSizeChart(text);
+    expect(r).not.toBeNull();
+    expect(r!.rows).toHaveLength(1);
+    expect(r!.rows[0].sizeLabel).toBe('FREE');
+    expect(r!.rows[0].measurements.shoulderWidth).toBe(46);
+  });
+
+  it('매칭 안 되면 null', () => {
+    const text = '그냥 아무 텍스트 123 456';
+    expect(parseSizeChart(text)).toBeNull();
+  });
+});
+
 describe('needsHalving', () => {
   it('"둘레" 포함 → true', () => {
     expect(needsHalving('허리둘레')).toBe(true);
