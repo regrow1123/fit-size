@@ -18,17 +18,19 @@ import {
   clearAllGarments,
   saveProfile,
 } from '../utils/storage';
+import { useTranslation } from '../i18n';
+import { ANCHOR_I18N_KEYS } from '../i18n/anchorKeys';
 
 interface Props {
   onSubmit: (body: BodyMeasurements) => void;
 }
 
-const FEEDBACK_OPTIONS: { value: FitFeedback; label: string; emoji: string; color: string; bg: string }[] = [
-  { value: '매우 타이트', label: '매우 타이트', emoji: '😣', color: 'text-red-700', bg: 'bg-red-100 border-red-300 hover:bg-red-200' },
-  { value: '타이트', label: '타이트', emoji: '😅', color: 'text-red-500', bg: 'bg-red-50 border-red-200 hover:bg-red-100' },
-  { value: '적당', label: '적당', emoji: '😊', color: 'text-green-600', bg: 'bg-green-50 border-green-300 hover:bg-green-100' },
-  { value: '넉넉', label: '넉넉', emoji: '😌', color: 'text-blue-500', bg: 'bg-blue-50 border-blue-200 hover:bg-blue-100' },
-  { value: '매우 넉넉', label: '매우 넉넉', emoji: '🥳', color: 'text-blue-700', bg: 'bg-blue-100 border-blue-300 hover:bg-blue-200' },
+const FEEDBACK_OPTIONS: { value: FitFeedback; labelKey: string; emoji: string; color: string; bg: string }[] = [
+  { value: '매우 타이트', labelKey: 'feedback.veryTight', emoji: '😣', color: 'text-red-700', bg: 'bg-red-100 border-red-300 hover:bg-red-200' },
+  { value: '타이트', labelKey: 'feedback.tight', emoji: '😅', color: 'text-red-500', bg: 'bg-red-50 border-red-200 hover:bg-red-100' },
+  { value: '적당', labelKey: 'feedback.good', emoji: '😊', color: 'text-green-600', bg: 'bg-green-50 border-green-300 hover:bg-green-100' },
+  { value: '넉넉', labelKey: 'feedback.loose', emoji: '😌', color: 'text-blue-500', bg: 'bg-blue-50 border-blue-200 hover:bg-blue-100' },
+  { value: '매우 넉넉', labelKey: 'feedback.veryLoose', emoji: '🥳', color: 'text-blue-700', bg: 'bg-blue-100 border-blue-300 hover:bg-blue-200' },
 ];
 
 const CATEGORY_ICONS: Record<ClothingCategory, string> = {
@@ -39,6 +41,7 @@ let garmentIdCounter = Date.now();
 let measurementIdCounter = 1;
 
 export default function ReverseInputForm({ onSubmit }: Props) {
+  const { t } = useTranslation();
   const [garments, setGarments] = useState<(ReverseGarment & { name?: string; fromStorage?: boolean })[]>([]);
   const [category, setCategory] = useState<ClothingCategory>('tshirt');
   const [sketchMeasurements, setSketchMeasurements] = useState<PointMeasurement[]>([]);
@@ -86,7 +89,6 @@ export default function ReverseInputForm({ onSubmit }: Props) {
 
   const estimates = useMemo(() => {
     const est = estimateBodyFromGarments(allGarments);
-    // Direct inputs override garment estimates
     if (directShoulder) est.shoulderWidth = { value: +directShoulder, count: 1 };
     if (directChest) est.chestCirc = { value: +directChest, count: 1 };
     if (directWaist) est.waistCirc = { value: +directWaist, count: 1 };
@@ -129,11 +131,10 @@ export default function ReverseInputForm({ onSubmit }: Props) {
   const handleSaveGarment = () => {
     if (currentReverseMeasurements.length === 0) return;
     const id = `g${garmentIdCounter++}`;
-    const name = garmentName.trim() || `${CATEGORY_ICONS[category]} 옷 ${garments.length + 1}`;
+    const name = garmentName.trim() || `${CATEGORY_ICONS[category]} ${t('reverse.defaultGarmentName', { num: garments.length + 1 })}`;
     const newGarment = { id, category, measurements: currentReverseMeasurements, name, fromStorage: false };
     setGarments(prev => [...prev, newGarment]);
 
-    // Persist to localStorage
     persistGarment({
       id,
       name,
@@ -192,46 +193,47 @@ export default function ReverseInputForm({ onSubmit }: Props) {
     const est = estimateBodyFromGarments(finalGarments);
     const body = estimatesToBodyMeasurements(est, gender, height, weight);
 
-    // Override with direct input values if provided
     if (directShoulder) body.shoulderWidth = +directShoulder;
     if (directChest) body.chestCirc = +directChest;
     if (directWaist) body.waistCirc = +directWaist;
     if (directHip) body.hipCirc = +directHip;
 
-    // Save profile with body measurements
     saveProfile({ gender, height, weight, bodyMeasurements: body, updatedAt: Date.now() });
 
     onSubmit(body);
   };
 
   const hasEstimates = Object.keys(estimates).length > 0 || directShoulder || directChest || directWaist || directHip;
-  const totalDataPoints = Object.values(estimates).reduce((sum, e) => sum + (e?.count ?? 0), 0);
+
+  /** Translate anchor point label by its ID */
+  const tAnchor = (pointId: string, fallbackLabel: string) => {
+    const key = ANCHOR_I18N_KEYS[pointId];
+    return key ? t(key) : fallbackLabel;
+  };
 
   return (
     <div className="space-y-4">
-      <h2 className="text-lg font-bold">🧍 내 체형 설정</h2>
-      <p className="text-sm text-gray-500">
-        기본 정보를 입력하고, 옷 데이터나 직접 치수로 체형을 정확하게 맞추세요.
-      </p>
+      <h2 className="text-lg font-bold">{t('reverse.title')}</h2>
+      <p className="text-sm text-gray-500">{t('reverse.desc')}</p>
 
       {/* Basic info */}
       <div className="bg-gray-50 rounded-lg p-3 space-y-3">
-        <h3 className="text-sm font-bold text-gray-700">기본 정보</h3>
+        <h3 className="text-sm font-bold text-gray-700">{t('reverse.basicInfo')}</h3>
         <div className="flex gap-4">
           <label className="flex items-center gap-1 text-sm">
-            <input type="radio" checked={gender === 'male'} onChange={() => setGender('male')} /> 남성
+            <input type="radio" checked={gender === 'male'} onChange={() => setGender('male')} /> {t('body.gender.male')}
           </label>
           <label className="flex items-center gap-1 text-sm">
-            <input type="radio" checked={gender === 'female'} onChange={() => setGender('female')} /> 여성
+            <input type="radio" checked={gender === 'female'} onChange={() => setGender('female')} /> {t('body.gender.female')}
           </label>
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="block text-xs text-gray-500">키 (cm)</label>
+            <label className="block text-xs text-gray-500">{t('body.height')}</label>
             <input type="number" value={height} onChange={e => setHeight(+e.target.value)} className="w-full border rounded px-2 py-1 text-sm" />
           </div>
           <div>
-            <label className="block text-xs text-gray-500">몸무게 (kg)</label>
+            <label className="block text-xs text-gray-500">{t('body.weight')}</label>
             <input type="number" value={weight} onChange={e => setWeight(+e.target.value)} className="w-full border rounded px-2 py-1 text-sm" />
           </div>
         </div>
@@ -243,28 +245,28 @@ export default function ReverseInputForm({ onSubmit }: Props) {
           onClick={() => setShowDirectInput(!showDirectInput)}
           className="flex items-center justify-between w-full text-sm font-bold text-gray-700 cursor-pointer"
         >
-          <span>체형 직접 입력 (선택)</span>
+          <span>{t('reverse.directInput')}</span>
           <span className="text-gray-400">{showDirectInput ? '▲' : '▼'}</span>
         </button>
         {showDirectInput && (
           <>
-            <p className="text-xs text-gray-400">알고 있는 치수가 있으면 입력하세요. 비워두면 자동 추정됩니다.</p>
+            <p className="text-xs text-gray-400">{t('reverse.directInputDesc')}</p>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs text-gray-500">어깨너비 (cm)</label>
-                <input type="number" value={directShoulder} placeholder="자동 추정" onChange={e => setDirectShoulder(e.target.value)} className="w-full border rounded px-2 py-1 text-sm" />
+                <label className="block text-xs text-gray-500">{t('reverse.shoulder')}</label>
+                <input type="number" value={directShoulder} placeholder={t('reverse.autoEstimate')} onChange={e => setDirectShoulder(e.target.value)} className="w-full border rounded px-2 py-1 text-sm" />
               </div>
               <div>
-                <label className="block text-xs text-gray-500">가슴둘레 (cm)</label>
-                <input type="number" value={directChest} placeholder="자동 추정" onChange={e => setDirectChest(e.target.value)} className="w-full border rounded px-2 py-1 text-sm" />
+                <label className="block text-xs text-gray-500">{t('reverse.chest')}</label>
+                <input type="number" value={directChest} placeholder={t('reverse.autoEstimate')} onChange={e => setDirectChest(e.target.value)} className="w-full border rounded px-2 py-1 text-sm" />
               </div>
               <div>
-                <label className="block text-xs text-gray-500">허리둘레 (cm)</label>
-                <input type="number" value={directWaist} placeholder="자동 추정" onChange={e => setDirectWaist(e.target.value)} className="w-full border rounded px-2 py-1 text-sm" />
+                <label className="block text-xs text-gray-500">{t('reverse.waist')}</label>
+                <input type="number" value={directWaist} placeholder={t('reverse.autoEstimate')} onChange={e => setDirectWaist(e.target.value)} className="w-full border rounded px-2 py-1 text-sm" />
               </div>
               <div>
-                <label className="block text-xs text-gray-500">엉덩이둘레 (cm)</label>
-                <input type="number" value={directHip} placeholder="자동 추정" onChange={e => setDirectHip(e.target.value)} className="w-full border rounded px-2 py-1 text-sm" />
+                <label className="block text-xs text-gray-500">{t('reverse.hip')}</label>
+                <input type="number" value={directHip} placeholder={t('reverse.autoEstimate')} onChange={e => setDirectHip(e.target.value)} className="w-full border rounded px-2 py-1 text-sm" />
               </div>
             </div>
           </>
@@ -275,12 +277,12 @@ export default function ReverseInputForm({ onSubmit }: Props) {
       {garments.length > 0 && (
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-bold text-gray-700">📦 내 옷장 ({garments.length}벌)</h3>
+            <h3 className="text-sm font-bold text-gray-700">{t('reverse.wardrobe', { count: garments.length })}</h3>
             <button
               onClick={handleClearAll}
               className="text-xs text-red-400 hover:text-red-600 cursor-pointer"
             >
-              🗑 전체 삭제
+              {t('reverse.clearAll')}
             </button>
           </div>
           {garments.map(g => {
@@ -288,7 +290,7 @@ export default function ReverseInputForm({ onSubmit }: Props) {
             const isEditing = editingNameId === g.id;
             return (
               <div key={g.id} className={`flex items-center gap-2 border rounded px-3 py-2 text-sm ${g.fromStorage ? 'bg-blue-50 border-blue-200' : 'bg-white'}`}>
-                {g.fromStorage && <span className="text-xs text-blue-400" title="저장됨">💾</span>}
+                {g.fromStorage && <span className="text-xs text-blue-400" title={t('reverse.saved')}>💾</span>}
                 <span className="text-lg">{gc.icon}</span>
                 {isEditing ? (
                   <input
@@ -303,9 +305,9 @@ export default function ReverseInputForm({ onSubmit }: Props) {
                   <span
                     className="flex-1 cursor-pointer hover:text-blue-600"
                     onClick={() => handleEditName(g.id, g.name || '')}
-                    title="클릭하여 이름 수정"
+                    title={t('reverse.clickToEditName')}
                   >
-                    {g.name || `${gc.label}`} <span className="text-gray-400 text-xs">({g.measurements.length}개 측정)</span>
+                    {g.name || `${gc.label}`} <span className="text-gray-400 text-xs">{t('reverse.measurementCount', { count: g.measurements.length })}</span>
                   </span>
                 )}
                 <button onClick={() => handleRemoveGarment(g.id)} className="text-red-400 hover:text-red-600 cursor-pointer text-xs">✕</button>
@@ -319,17 +321,17 @@ export default function ReverseInputForm({ onSubmit }: Props) {
       {isAddingGarment ? (
         <div className="border-2 border-dashed border-blue-200 rounded-lg p-3 space-y-3">
           <h3 className="text-sm font-bold text-gray-700">
-            {garments.length === 0 ? '첫 번째 옷 입력' : '새 옷 추가'}
+            {garments.length === 0 ? t('reverse.firstGarment') : t('reverse.addGarment')}
           </h3>
 
           {/* Garment name input */}
           <div>
-            <label className="block text-xs text-gray-500 mb-1">옷 이름 (선택)</label>
+            <label className="block text-xs text-gray-500 mb-1">{t('reverse.garmentName')}</label>
             <input
               type="text"
               value={garmentName}
               onChange={e => setGarmentName(e.target.value)}
-              placeholder="예: 무신사 흰 티셔츠 L"
+              placeholder={t('reverse.garmentNamePlaceholder')}
               className="w-full border rounded px-2 py-1.5 text-sm"
             />
           </div>
@@ -344,12 +346,12 @@ export default function ReverseInputForm({ onSubmit }: Props) {
                   category === cat.id ? 'bg-blue-600 text-white shadow' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                 }`}
               >
-                {cat.icon} {cat.label}
+                {cat.icon} {t(`category.${cat.id}`)}
               </button>
             ))}
           </div>
 
-          <p className="text-xs text-gray-400">도식화에서 두 점을 클릭 → 실측치 입력 → 착용감 선택</p>
+          <p className="text-xs text-gray-400">{t('reverse.sketchGuide')}</p>
 
           <ClothingSketch
             category={category}
@@ -362,7 +364,7 @@ export default function ReverseInputForm({ onSubmit }: Props) {
           {pendingFeedbackIdx !== null && (
             <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 space-y-2">
               <p className="text-sm font-medium text-yellow-800">
-                이 옷을 입었을 때 느낌은?
+                {t('reverse.feedbackQuestion')}
               </p>
               <div className="flex flex-wrap gap-1.5">
                 {FEEDBACK_OPTIONS.map(opt => (
@@ -373,7 +375,7 @@ export default function ReverseInputForm({ onSubmit }: Props) {
                       currentReverseMeasurements[pendingFeedbackIdx]?.feedback === opt.value ? 'ring-2 ring-offset-1 ring-blue-400' : ''
                     }`}
                   >
-                    {opt.emoji} {opt.label}
+                    {opt.emoji} {t(opt.labelKey)}
                   </button>
                 ))}
               </div>
@@ -383,7 +385,7 @@ export default function ReverseInputForm({ onSubmit }: Props) {
           {/* Measurement list with feedback */}
           {currentReverseMeasurements.length > 0 && (
             <div className="space-y-1">
-              <h4 className="text-xs font-bold text-gray-500">현재 옷 측정</h4>
+              <h4 className="text-xs font-bold text-gray-500">{t('reverse.currentMeasurements')}</h4>
               {currentReverseMeasurements.map((rm, i) => {
                 const catPts = CLOTHING_CATEGORIES.find(c => c.id === category)!.anchorPoints;
                 const sp = catPts.find(p => p.id === rm.startPointId);
@@ -391,12 +393,12 @@ export default function ReverseInputForm({ onSubmit }: Props) {
                 const fb = FEEDBACK_OPTIONS.find(f => f.value === rm.feedback)!;
                 return (
                   <div key={i} className="flex items-center gap-2 text-xs bg-gray-50 rounded px-2 py-1">
-                    <span className="flex-1">{sp?.label} → {ep?.label}: <b>{rm.value}cm</b></span>
+                    <span className="flex-1">{sp ? tAnchor(sp.id, sp.label) : ''} → {ep ? tAnchor(ep.id, ep.label) : ''}: <b>{rm.value}cm</b></span>
                     <button
                       onClick={() => setPendingFeedbackIdx(i)}
                       className={`px-2 py-0.5 rounded-full border text-xs cursor-pointer ${fb.bg} ${fb.color}`}
                     >
-                      {fb.emoji} {fb.label}
+                      {fb.emoji} {t(fb.labelKey)}
                     </button>
                   </div>
                 );
@@ -410,14 +412,14 @@ export default function ReverseInputForm({ onSubmit }: Props) {
               disabled={currentReverseMeasurements.length === 0}
               className="flex-1 bg-blue-600 text-white py-2 rounded text-sm hover:bg-blue-700 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
             >
-              ✅ 이 옷 저장
+              {t('reverse.saveGarment')}
             </button>
             {garments.length > 0 && (
               <button
                 onClick={() => setIsAddingGarment(false)}
                 className="px-4 py-2 border rounded text-sm text-gray-500 hover:bg-gray-50 cursor-pointer"
               >
-                취소
+                {t('reverse.cancel')}
               </button>
             )}
           </div>
@@ -427,17 +429,17 @@ export default function ReverseInputForm({ onSubmit }: Props) {
           onClick={handleAddAnother}
           className="w-full border-2 border-dashed border-gray-300 text-gray-500 py-3 rounded-lg hover:border-blue-300 hover:text-blue-500 cursor-pointer transition"
         >
-          ➕ 다른 옷 추가하기
+          {t('reverse.addAnother')}
         </button>
       )}
 
-      {/* Estimated body dimensions — full stats panel */}
+      {/* Estimated body dimensions */}
       <BodyStatsPanel
         gender={gender}
         height={height}
         weight={weight}
         garmentEstimates={estimates}
-        totalDataPoints={totalDataPoints}
+        totalDataPoints={Object.values(estimates).reduce((sum, e) => sum + (e?.count ?? 0), 0)}
       />
 
       {/* Submit */}
@@ -446,7 +448,7 @@ export default function ReverseInputForm({ onSubmit }: Props) {
         disabled={!hasEstimates}
         className="w-full bg-green-600 text-white py-3 rounded-lg font-bold hover:bg-green-700 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed transition"
       >
-        🧍 추정 체형으로 아바타 생성
+        {t('reverse.generateAvatar')}
       </button>
     </div>
   );
@@ -461,12 +463,11 @@ interface BodyStatsPanelProps {
 }
 
 function BodyStatsPanel({ gender, height, weight, garmentEstimates }: BodyStatsPanelProps) {
-  // Build BodyMeasurements from garment estimates
+  const { t } = useTranslation();
   const bodyFromGarments = useMemo(() => {
     return estimatesToBodyMeasurements(garmentEstimates, gender, height, weight);
   }, [garmentEstimates, gender, height, weight]);
 
-  // Full estimation with Size Korea + deviation propagation
   const fullStats = useMemo(() => {
     return estimateBodyDimensions(
       gender, height, weight,
@@ -477,23 +478,23 @@ function BodyStatsPanel({ gender, height, weight, garmentEstimates }: BodyStatsP
     );
   }, [gender, height, weight, bodyFromGarments]);
 
-  const items: { key: string; label: string; value: number; fromGarment: boolean }[] = [
-    { key: 'shoulderWidth', label: '어깨너비', value: fullStats.shoulderWidth, fromGarment: !!garmentEstimates.shoulderWidth },
-    { key: 'chestCirc', label: '가슴둘레', value: fullStats.chestCirc, fromGarment: !!garmentEstimates.chestCirc },
-    { key: 'waistCirc', label: '허리둘레', value: fullStats.waistCirc, fromGarment: !!garmentEstimates.waistCirc },
-    { key: 'hipCirc', label: '엉덩이둘레', value: fullStats.hipCirc, fromGarment: !!garmentEstimates.hipCirc },
-    { key: 'armLength', label: '팔길이', value: fullStats.armLength, fromGarment: false },
-    { key: 'neckCirc', label: '목둘레', value: fullStats.neckCirc, fromGarment: false },
-    { key: 'torsoLength', label: '상체길이', value: fullStats.torsoLength, fromGarment: false },
+  const items: { key: string; labelKey: string; value: number; fromGarment: boolean }[] = [
+    { key: 'shoulderWidth', labelKey: 'stats.shoulderWidth', value: fullStats.shoulderWidth, fromGarment: !!garmentEstimates.shoulderWidth },
+    { key: 'chestCirc', labelKey: 'stats.chestCirc', value: fullStats.chestCirc, fromGarment: !!garmentEstimates.chestCirc },
+    { key: 'waistCirc', labelKey: 'stats.waistCirc', value: fullStats.waistCirc, fromGarment: !!garmentEstimates.waistCirc },
+    { key: 'hipCirc', labelKey: 'stats.hipCirc', value: fullStats.hipCirc, fromGarment: !!garmentEstimates.hipCirc },
+    { key: 'armLength', labelKey: 'stats.armLength', value: fullStats.armLength, fromGarment: false },
+    { key: 'neckCirc', labelKey: 'stats.neckCirc', value: fullStats.neckCirc, fromGarment: false },
+    { key: 'torsoLength', labelKey: 'stats.torsoLength', value: fullStats.torsoLength, fromGarment: false },
   ];
 
   return (
     <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 space-y-3">
-      <h3 className="text-sm font-bold text-gray-700">추정 체형 수치</h3>
+      <h3 className="text-sm font-bold text-gray-700">{t('reverse.estimatedStats')}</h3>
       <div className="grid grid-cols-2 gap-x-4 gap-y-1.5">
         {items.map(item => (
           <div key={item.key} className="flex items-center justify-between text-sm py-1">
-            <span className="text-gray-500">{item.label}</span>
+            <span className="text-gray-500">{t(item.labelKey)}</span>
             <span className={`font-mono font-semibold ${item.fromGarment ? 'text-blue-600' : 'text-gray-800'}`}>
               {item.value.toFixed(1)}
               <span className="text-xs text-gray-400 ml-0.5">cm</span>
@@ -504,5 +505,3 @@ function BodyStatsPanel({ gender, height, weight, garmentEstimates }: BodyStatsP
     </div>
   );
 }
-
-// (removed ConfidenceDots — no longer used)

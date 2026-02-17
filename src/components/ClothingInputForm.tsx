@@ -4,6 +4,7 @@ import type { ClothingCategory, PointMeasurement, BodyMeasurements } from '../ty
 import { CLOTHING_CATEGORIES } from '../data/anchorPoints';
 import { pointMeasurementsToMap } from '../utils/clothingRenderer';
 import { estimateBodyDimensions } from '../data/bodyStats';
+import { useTranslation } from '../i18n';
 
 interface Props {
   onSubmit: (measurements: Map<string, number>, category: ClothingCategory) => void;
@@ -19,14 +20,13 @@ function generateBodyDefaults(body: BodyMeasurements, category: ClothingCategory
 
   const map = new Map<string, number>();
 
-  // Ease = 옷이 몸보다 여유 있는 양 (cm)
   const EASE = { shoulder: 2, circ: 8, hem: 10, sleeve: 2 };
 
   if (category === 'tshirt' || category === 'long_sleeve' || category === 'jacket' || category === 'dress') {
     map.set('shoulderWidth', stats.shoulderWidth + EASE.shoulder);
     map.set('chestCirc', stats.chestCirc + EASE.circ);
     map.set('hemCirc', stats.waistCirc + EASE.hem);
-    map.set('totalLength', stats.torsoLength + 25); // 어깨~엉덩이 + 여유
+    map.set('totalLength', stats.torsoLength + 25);
 
     if (category === 'tshirt') {
       map.set('sleeveLength', 22);
@@ -56,7 +56,7 @@ function generateBodyDefaults(body: BodyMeasurements, category: ClothingCategory
   if (category === 'pants') {
     map.set('waistCirc', stats.waistCirc + 4);
     map.set('hipCirc', stats.hipCirc + 6);
-    map.set('thighCirc', (stats.hipCirc / 2) * 0.65 * 2 + 8); // rough thigh from hip
+    map.set('thighCirc', (stats.hipCirc / 2) * 0.65 * 2 + 8);
     map.set('kneeCirc', 40);
     map.set('hemCirc', 36);
     map.set('rise', 26);
@@ -67,22 +67,22 @@ function generateBodyDefaults(body: BodyMeasurements, category: ClothingCategory
   return map;
 }
 
-/** 측정 키별 사람이 읽을 수 있는 라벨 */
-const MEASUREMENT_LABELS: Record<string, string> = {
-  shoulderWidth: '어깨너비',
-  chestCirc: '가슴둘레',
-  waistCirc: '허리둘레',
-  hipCirc: '엉덩이둘레',
-  hemCirc: '밑단둘레',
-  totalLength: '총장',
-  sleeveLength: '소매길이',
-  sleeveCirc: '소매둘레',
-  elbowCirc: '팔꿈치둘레',
-  cuffCirc: '소매단둘레',
-  thighCirc: '허벅지둘레',
-  kneeCirc: '무릎둘레',
-  rise: '밑위',
-  inseam: '안쪽솔기',
+/** Measurement key → i18n key mapping */
+const MEASUREMENT_LABEL_KEYS: Record<string, string> = {
+  shoulderWidth: 'measure.shoulderWidth',
+  chestCirc: 'measure.chestCirc',
+  waistCirc: 'measure.waistCirc',
+  hipCirc: 'measure.hipCirc',
+  hemCirc: 'measure.hemCirc',
+  totalLength: 'measure.totalLength',
+  sleeveLength: 'measure.sleeveLength',
+  sleeveCirc: 'measure.sleeveCirc',
+  elbowCirc: 'measure.elbowCirc',
+  cuffCirc: 'measure.cuffCirc',
+  thighCirc: 'measure.thighCirc',
+  kneeCirc: 'measure.kneeCirc',
+  rise: 'measure.rise',
+  inseam: 'measure.inseam',
 };
 
 /** 카테고리별 표시할 측정 키 순서 */
@@ -97,6 +97,7 @@ const CATEGORY_KEYS: Record<ClothingCategory, string[]> = {
 let nextId = 1;
 
 export default function ClothingInputForm({ onSubmit, body }: Props) {
+  const { t } = useTranslation();
   const [category, setCategory] = useState<ClothingCategory>('tshirt');
   const [measurements, setMeasurements] = useState<PointMeasurement[]>([]);
 
@@ -116,13 +117,8 @@ export default function ClothingInputForm({ onSubmit, body }: Props) {
     setMeasurements([]);
   };
 
-  // 사용자 입력 → Map
   const userMap = useMemo(() => pointMeasurementsToMap(measurements, category), [measurements, category]);
-
-  // 체형 기반 기본값
   const defaults = useMemo(() => generateBodyDefaults(body, category), [body, category]);
-
-  // 최종 합산 (사용자 입력 우선, 없으면 기본값)
   const finalMap = useMemo(() => {
     const merged = new Map(defaults);
     for (const [k, v] of userMap) {
@@ -136,12 +132,11 @@ export default function ClothingInputForm({ onSubmit, body }: Props) {
   };
 
   const keys = CATEGORY_KEYS[category] ?? [];
-
   const catConfig = CLOTHING_CATEGORIES.find(c => c.id === category)!;
 
   return (
     <div className="space-y-4">
-      <h2 className="text-lg font-bold">{catConfig.icon} 새 옷 실측치</h2>
+      <h2 className="text-lg font-bold">{t('clothing.title', { icon: catConfig.icon })}</h2>
 
       {/* Category selector */}
       <div className="flex flex-wrap gap-1.5">
@@ -155,14 +150,12 @@ export default function ClothingInputForm({ onSubmit, body }: Props) {
                 : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
             }`}
           >
-            {cat.icon} {cat.label}
+            {cat.icon} {t(`category.${cat.id}`)}
           </button>
         ))}
       </div>
 
-      <p className="text-sm text-gray-500">
-        도식화에서 두 점을 클릭하여 측정값을 입력하세요.
-      </p>
+      <p className="text-sm text-gray-500">{t('clothing.sketchGuide')}</p>
 
       <ClothingSketch
         category={category}
@@ -176,13 +169,14 @@ export default function ClothingInputForm({ onSubmit, body }: Props) {
         <table className="w-full text-sm">
           <thead>
             <tr className="bg-gray-50 text-gray-600">
-              <th className="text-left px-3 py-2 font-medium">부위</th>
-              <th className="text-right px-3 py-2 font-medium">치수 (cm)</th>
+              <th className="text-left px-3 py-2 font-medium">{t('clothing.tableHeader.part')}</th>
+              <th className="text-right px-3 py-2 font-medium">{t('clothing.tableHeader.size')}</th>
             </tr>
           </thead>
           <tbody>
             {keys.map(key => {
-              const label = MEASUREMENT_LABELS[key] ?? key;
+              const labelKey = MEASUREMENT_LABEL_KEYS[key];
+              const label = labelKey ? t(labelKey) : key;
               const clothVal = finalMap.get(key);
               const userEntered = userMap.has(key);
 
@@ -203,7 +197,7 @@ export default function ClothingInputForm({ onSubmit, body }: Props) {
         onClick={handleSubmit}
         className="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700 transition cursor-pointer"
       >
-        피팅 확인
+        {t('clothing.submit')}
       </button>
     </div>
   );

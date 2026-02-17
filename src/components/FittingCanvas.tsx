@@ -3,6 +3,7 @@ import type { BodyMeasurements, AvatarDimensions, ClothingDimensions, ClothingCa
 import { calculateAvatarDimensions } from '../utils/avatarCalculator';
 import { drawAvatar } from '../utils/avatarRenderer';
 import { calculateClothingDimensions, drawClothing } from '../utils/clothingRenderer';
+import { useTranslation } from '../i18n';
 
 interface Props {
   body: BodyMeasurements;
@@ -15,6 +16,7 @@ const BASE_HEIGHT = 700;
 const ASPECT = BASE_HEIGHT / BASE_WIDTH;
 
 export default function FittingCanvas({ body, clothingMeasurements, category = 'tshirt' }: Props) {
+  const { t } = useTranslation();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState({ w: BASE_WIDTH, h: BASE_HEIGHT });
@@ -64,13 +66,13 @@ export default function FittingCanvas({ body, clothingMeasurements, category = '
       />
       <div className="mt-2 flex gap-4 text-xs text-gray-500">
         <span className="flex items-center gap-1">
-          <span className="w-3 h-3 rounded bg-green-500 inline-block" /> 적당
+          <span className="w-3 h-3 rounded bg-green-500 inline-block" /> {t('fit.good')}
         </span>
         <span className="flex items-center gap-1">
-          <span className="w-3 h-3 rounded bg-yellow-500 inline-block" /> 여유
+          <span className="w-3 h-3 rounded bg-yellow-500 inline-block" /> {t('fit.loose')}
         </span>
         <span className="flex items-center gap-1">
-          <span className="w-3 h-3 rounded bg-red-500 inline-block" /> 빡빡
+          <span className="w-3 h-3 rounded bg-red-500 inline-block" /> {t('fit.tight')}
         </span>
       </div>
     </div>

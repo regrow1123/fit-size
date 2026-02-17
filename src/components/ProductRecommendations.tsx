@@ -1,5 +1,6 @@
 import type { ClothingCategory } from '../types';
 import { mockProducts } from '../data/mockProducts';
+import { useTranslation } from '../i18n';
 
 const CATEGORY_EMOJI: Record<ClothingCategory, string> = {
   tshirt: '👕', long_sleeve: '🧥', jacket: '🧥', pants: '👖', dress: '👗',
@@ -10,6 +11,7 @@ interface Props {
 }
 
 export default function ProductRecommendations({ category }: Props) {
+  const { t } = useTranslation();
   const products = mockProducts.filter(p => p.category.includes(category));
 
   if (products.length === 0) return null;
@@ -17,7 +19,7 @@ export default function ProductRecommendations({ category }: Props) {
   return (
     <div className="mt-8 max-w-4xl mx-auto px-4">
       <h2 className="text-xl font-bold text-gray-800 mb-4">
-        👗 내 체형에 맞는 추천 상품
+        {t('product.title')}
       </h2>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -30,7 +32,7 @@ export default function ProductRecommendations({ category }: Props) {
           >
             {product.sponsored && (
               <span className="absolute top-2 right-2 text-[10px] text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">
-                광고
+                {t('product.ad')}
               </span>
             )}
 
@@ -59,20 +61,20 @@ export default function ProductRecommendations({ category }: Props) {
                       : 'bg-blue-100 text-blue-700'
                   }`}
                 >
-                  {product.sizeMatch === 'perfect' ? '✅ 딱 맞아요' : '👍 적당해요'}
+                  {product.sizeMatch === 'perfect' ? t('product.perfectFit') : t('product.goodFit')}
                 </span>
                 <span className="text-gray-400">{product.shop}</span>
               </div>
 
               <div className="flex items-center justify-between">
                 <span className="font-bold text-gray-900">
-                  {product.price.toLocaleString()}원
+                  {product.price.toLocaleString()}{t('product.currency')}
                 </span>
                 <a
                   href={product.url}
                   className="text-xs font-medium text-blue-600 hover:text-blue-800 transition"
                 >
-                  상품 보기 →
+                  {t('product.viewProduct')}
                 </a>
               </div>
             </div>
@@ -81,7 +83,7 @@ export default function ProductRecommendations({ category }: Props) {
       </div>
 
       <p className="text-center text-xs text-gray-400 mt-6 mb-4">
-        Powered by FitSize
+        {t('product.poweredBy')}
       </p>
     </div>
   );

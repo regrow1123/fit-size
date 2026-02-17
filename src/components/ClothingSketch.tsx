@@ -1,6 +1,8 @@
 import { useRef, useEffect, useState, useCallback } from 'react';
 import { getCategoryConfig, type AnchorPoint } from '../data/anchorPoints';
 import type { ClothingCategory, PointMeasurement } from '../types';
+import { useTranslation } from '../i18n';
+import { ANCHOR_I18N_KEYS } from '../i18n/anchorKeys';
 
 const CANVAS_W = 460;
 const CANVAS_H = 580;
@@ -19,7 +21,17 @@ const LINE_COLORS = [
   '#EC4899', '#06B6D4', '#F97316', '#6366F1', '#14B8A6',
 ];
 
+// i18n keys for sketch UI
+const SKETCH_KEYS = {
+  clickStart: 'sketch.clickStart',
+  selectedGoEnd: 'sketch.selectedGoEnd',
+  cancel: 'sketch.cancel',
+  confirm: 'sketch.confirm',
+  measurementList: 'sketch.measurementList',
+};
+
 export default function ClothingSketch({ category, measurements, onAddMeasurement, onDeleteMeasurement }: Props) {
+  const { t, locale } = useTranslation();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [hoveredPoint, setHoveredPoint] = useState<string | null>(null);
   const [selectedStart, setSelectedStart] = useState<string | null>(null);
@@ -29,6 +41,12 @@ export default function ClothingSketch({ category, measurements, onAddMeasuremen
 
   const config = getCategoryConfig(category);
   const points = config.anchorPoints;
+
+  /** Translate anchor point label */
+  const tAnchor = useCallback((p: AnchorPoint) => {
+    const key = ANCHOR_I18N_KEYS[p.id];
+    return key ? t(key) : p.label;
+  }, [t]);
 
   const toCanvas = useCallback((p: AnchorPoint) => ({
     x: p.x * CANVAS_W,
@@ -51,7 +69,6 @@ export default function ClothingSketch({ category, measurements, onAddMeasuremen
 
     ctx.clearRect(0, 0, CANVAS_W, CANVAS_H);
 
-    // Draw outline for current category
     config.drawOutline(ctx, CANVAS_W, CANVAS_H);
 
     // Measurement lines
@@ -115,17 +132,18 @@ export default function ClothingSketch({ category, measurements, onAddMeasuremen
       ctx.stroke();
 
       if (isHovered || isSelected) {
+        const pointLabel = tAnchor(p);
         ctx.font = '12px sans-serif';
-        const bg = ctx.measureText(p.label).width;
+        const bg = ctx.measureText(pointLabel).width;
         ctx.fillStyle = 'rgba(255,255,255,0.9)';
         ctx.fillRect(x - bg / 2 - 4, y - HOVER_RADIUS - 20, bg + 8, 18);
         ctx.fillStyle = '#1F2937';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'bottom';
-        ctx.fillText(p.label, x, y - HOVER_RADIUS - 5);
+        ctx.fillText(pointLabel, x, y - HOVER_RADIUS - 5);
       }
     }
-  }, [hoveredPoint, selectedStart, pendingEnd, measurements, toCanvas, config, points]);
+  }, [hoveredPoint, selectedStart, pendingEnd, measurements, toCanvas, config, points, tAnchor, locale]);
 
   const handleMouseMove = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
     const rect = canvasRef.current?.getBoundingClientRect();
@@ -168,15 +186,17 @@ export default function ClothingSketch({ category, measurements, onAddMeasuremen
     setInputValue('');
   }, []);
 
-  const startLabel = selectedStart ? points.find(p => p.id === selectedStart)?.label : '';
-  const endLabel = pendingEnd ? points.find(p => p.id === pendingEnd)?.label : '';
+  const startPt = selectedStart ? points.find(p => p.id === selectedStart) : null;
+  const endPt = pendingEnd ? points.find(p => p.id === pendingEnd) : null;
+  const startLabel = startPt ? tAnchor(startPt) : '';
+  const endLabel = endPt ? tAnchor(endPt) : '';
 
   return (
     <div className="space-y-3">
       <div className="text-sm text-gray-600 bg-gray-50 rounded px-3 py-2 min-h-[2.5rem] flex items-center">
-        {!selectedStart && !pendingEnd && '📍 시작점을 클릭하세요'}
+        {!selectedStart && !pendingEnd && `📍 ${t(SKETCH_KEYS.clickStart)}`}
         {selectedStart && !pendingEnd && (
-          <span>📍 <b>{startLabel}</b> 선택됨 → 끝점을 클릭하세요 <button onClick={handleCancel} className="ml-2 text-red-500 text-xs cursor-pointer">취소</button></span>
+          <span>📍 <b>{startLabel}</b> {t(SKETCH_KEYS.selectedGoEnd)} <button onClick={handleCancel} className="ml-2 text-red-500 text-xs cursor-pointer">{t(SKETCH_KEYS.cancel)}</button></span>
         )}
         {pendingEnd && (
           <div className="flex items-center gap-2 w-full">
@@ -190,8 +210,8 @@ export default function ClothingSketch({ category, measurements, onAddMeasuremen
               placeholder="cm"
               className="w-20 border rounded px-2 py-1 text-sm"
             />
-            <button onClick={handleConfirm} className="bg-blue-600 text-white px-3 py-1 rounded text-sm cursor-pointer hover:bg-blue-700">확인</button>
-            <button onClick={handleCancel} className="text-red-500 text-sm cursor-pointer">취소</button>
+            <button onClick={handleConfirm} className="bg-blue-600 text-white px-3 py-1 rounded text-sm cursor-pointer hover:bg-blue-700">{t(SKETCH_KEYS.confirm)}</button>
+            <button onClick={handleCancel} className="text-red-500 text-sm cursor-pointer">{t(SKETCH_KEYS.cancel)}</button>
           </div>
         )}
       </div>
@@ -208,7 +228,7 @@ export default function ClothingSketch({ category, measurements, onAddMeasuremen
 
       {measurements.length > 0 && (
         <div className="space-y-1">
-          <h3 className="text-sm font-bold text-gray-700">📐 측정 목록</h3>
+          <h3 className="text-sm font-bold text-gray-700">📐 {t(SKETCH_KEYS.measurementList)}</h3>
           {measurements.map((m, i) => {
             const sp = points.find(p => p.id === m.startPointId);
             const ep = points.find(p => p.id === m.endPointId);
@@ -216,7 +236,7 @@ export default function ClothingSketch({ category, measurements, onAddMeasuremen
               <div key={m.id} className="flex items-center justify-between bg-gray-50 rounded px-3 py-1.5 text-sm">
                 <span>
                   <span className="inline-block w-3 h-3 rounded-full mr-2" style={{ backgroundColor: LINE_COLORS[i % LINE_COLORS.length] }} />
-                  {sp?.label} → {ep?.label}: <b>{m.value}cm</b>
+                  {sp ? tAnchor(sp) : ''} → {ep ? tAnchor(ep) : ''}: <b>{m.value}cm</b>
                 </span>
                 <button onClick={() => onDeleteMeasurement(m.id)} className="text-red-400 hover:text-red-600 cursor-pointer text-xs">✕</button>
               </div>

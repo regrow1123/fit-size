@@ -6,6 +6,7 @@ import ReverseInputForm from './components/ReverseInputForm';
 import ProductRecommendations from './components/ProductRecommendations';
 import { hasStoredProfile, loadWardrobe, exportWardrobe, importWardrobe } from './utils/storage';
 import { estimateBodyFromGarments, estimatesToBodyMeasurements } from './utils/reverseEstimator';
+import { useTranslation, type Locale } from './i18n';
 
 type Step = 'body' | 'clothing' | 'result';
 
@@ -13,7 +14,10 @@ const CATEGORY_ICONS: Record<ClothingCategory, string> = {
   tshirt: '👕', long_sleeve: '🧥', jacket: '🧥', pants: '👖', dress: '👗',
 };
 
+const LOCALES: Locale[] = ['ko', 'en', 'ja'];
+
 export default function App() {
+  const { t, locale, setLocale } = useTranslation();
   const [step, setStep] = useState<Step>('body');
   const [body, setBody] = useState<BodyMeasurements | null>(null);
   const [clothing, setClothing] = useState<Map<string, number> | null>(null);
@@ -59,14 +63,29 @@ export default function App() {
     setClothing(null);
   };
 
-  const stepLabels = ['체형 설정', '새 옷 실측치', '피팅 결과'];
+  const stepLabels = [t('app.step.body'), t('app.step.clothing'), t('app.step.result')];
 
   return (
     <div className="min-h-screen bg-gray-100">
       <header className="bg-blue-600 text-white py-4 shadow">
-        <div className="max-w-4xl mx-auto px-4">
-          <h1 className="text-2xl font-bold">{CATEGORY_ICONS[category]} FitSize</h1>
-          <p className="text-blue-100 text-sm">온라인 쇼핑 옷 사이즈, 입어보고 결정하세요</p>
+        <div className="max-w-4xl mx-auto px-4 flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold">{CATEGORY_ICONS[category]} FitSize</h1>
+            <p className="text-blue-100 text-sm">{t('app.subtitle')}</p>
+          </div>
+          <div className="flex gap-1">
+            {LOCALES.map(l => (
+              <button
+                key={l}
+                onClick={() => setLocale(l)}
+                className={`px-2 py-1 rounded text-xs font-medium cursor-pointer transition ${
+                  locale === l ? 'bg-white text-blue-600' : 'bg-blue-500 text-blue-100 hover:bg-blue-400'
+                }`}
+              >
+                {t(`lang.${l}`)}
+              </button>
+            ))}
+          </div>
         </div>
       </header>
 
@@ -74,20 +93,20 @@ export default function App() {
         {/* Welcome back banner */}
         {showWelcomeBack && step === 'body' && (
           <div className="mb-6 bg-gradient-to-r from-green-50 to-blue-50 border border-green-300 rounded-xl p-5 shadow-sm">
-            <h2 className="text-lg font-bold text-green-800 mb-1">👋 다시 오셨네요!</h2>
-            <p className="text-sm text-green-700 mb-3">저장된 프로필이 있습니다. 바로 새 옷 피팅을 시작할 수 있어요.</p>
+            <h2 className="text-lg font-bold text-green-800 mb-1">{t('app.welcome.title')}</h2>
+            <p className="text-sm text-green-700 mb-3">{t('app.welcome.desc')}</p>
             <div className="flex gap-2">
               <button
                 onClick={handleLoadProfileDirect}
                 className="bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-green-700 cursor-pointer transition"
               >
-                ✅ 저장된 프로필로 시작
+                {t('app.welcome.loadProfile')}
               </button>
               <button
                 onClick={() => setShowWelcomeBack(false)}
                 className="border border-green-400 text-green-700 px-4 py-2 rounded-lg text-sm hover:bg-green-50 cursor-pointer transition"
               >
-                체형 다시 설정
+                {t('app.welcome.resetBody')}
               </button>
             </div>
           </div>
@@ -131,16 +150,16 @@ export default function App() {
 
                 {/* Export / Import */}
                 <div className="mt-6 pt-4 border-t border-gray-200">
-                  <p className="text-sm text-gray-500 text-center mb-3">다른 기기에서도 사용하고 싶다면?</p>
+                  <p className="text-sm text-gray-500 text-center mb-3">{t('app.importPrompt')}</p>
                   <div className="flex gap-3 justify-center">
                     <button
                       onClick={exportWardrobe}
                       className="flex items-center gap-1.5 border border-gray-300 text-gray-600 px-4 py-2 rounded-lg text-sm hover:bg-gray-50 cursor-pointer transition"
                     >
-                      📤 내보내기
+                      {t('app.export')}
                     </button>
                     <label className="flex items-center gap-1.5 border border-gray-300 text-gray-600 px-4 py-2 rounded-lg text-sm hover:bg-gray-50 cursor-pointer transition">
-                      📥 불러오기
+                      {t('app.import')}
                       <input
                         type="file"
                         accept=".json"
@@ -150,10 +169,15 @@ export default function App() {
                           if (!file) return;
                           try {
                             const result = await importWardrobe(file);
-                            setImportMsg(`✅ 옷 ${result.garments}벌${result.hasProfile ? ', 프로필 포함' : ''}`);
+                            setImportMsg(t('app.importSuccess', {
+                              garments: result.garments,
+                              profile: result.hasProfile ? t('app.importProfileIncluded') : '',
+                            }));
                             setShowWelcomeBack(true);
                           } catch (err: unknown) {
-                            setImportMsg(`❌ ${err instanceof Error ? err.message : '실패'}`);
+                            setImportMsg(t('app.importFailed', {
+                              error: err instanceof Error ? err.message : t('app.importFailedGeneric'),
+                            }));
                           }
                           e.target.value = '';
                         }}
@@ -169,28 +193,25 @@ export default function App() {
             )}
             {step === 'result' && (
               <div className="space-y-4">
-                <h2 className="text-lg font-bold">✅ 피팅 결과</h2>
-                <p className="text-gray-600 text-sm">
-                  캔버스에서 아바타에 옷이 어떻게 맞는지 확인하세요.
-                  파란색 영역이 옷이고, 피부색이 아바타입니다.
-                </p>
+                <h2 className="text-lg font-bold">{t('app.result.title')}</h2>
+                <p className="text-gray-600 text-sm">{t('app.result.desc')}</p>
                 <div className="text-sm space-y-1 text-gray-500">
-                  <p>🟢 <b>적당</b>: 차이 -1cm ~ +3cm</p>
-                  <p>🟡 <b>여유</b>: +3cm 이상</p>
-                  <p>🔴 <b>빡빡</b>: -1cm 이하</p>
+                  <p dangerouslySetInnerHTML={{ __html: t('app.result.fitGood') }} />
+                  <p dangerouslySetInnerHTML={{ __html: t('app.result.fitLoose') }} />
+                  <p dangerouslySetInnerHTML={{ __html: t('app.result.fitTight') }} />
                 </div>
                 <div className="flex gap-2">
                   <button
                     onClick={() => setStep('clothing')}
                     className="flex-1 border border-blue-600 text-blue-600 py-2 rounded hover:bg-blue-50 cursor-pointer"
                   >
-                    실측치 수정
+                    {t('app.result.editMeasurements')}
                   </button>
                   <button
                     onClick={reset}
                     className="flex-1 border border-gray-400 text-gray-600 py-2 rounded hover:bg-gray-50 cursor-pointer"
                   >
-                    처음부터
+                    {t('app.result.startOver')}
                   </button>
                 </div>
               </div>
@@ -205,8 +226,8 @@ export default function App() {
                 category={category}
               />
             ) : (
-              <div className="w-full max-w-[400px] aspect-[4/7] border rounded-lg bg-white flex items-center justify-center text-gray-400 text-center px-4">
-                체형을 설정하면<br />아바타가 표시됩니다
+              <div className="w-full max-w-[400px] aspect-[4/7] border rounded-lg bg-white flex items-center justify-center text-gray-400 text-center px-4 whitespace-pre-line">
+                {t('app.avatarPlaceholder')}
               </div>
             )}
           </div>

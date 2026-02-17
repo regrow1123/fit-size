@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type { BodyMeasurements } from '../types';
+import { useTranslation } from '../i18n';
 
 interface Props {
   onSubmit: (body: BodyMeasurements) => void;
@@ -14,6 +15,7 @@ const defaults: BodyMeasurements = {
 };
 
 export default function BodyInputForm({ onSubmit, initial }: Props) {
+  const { t } = useTranslation();
   const [form, setForm] = useState<BodyMeasurements>(initial ?? defaults);
 
   const update = <K extends keyof BodyMeasurements>(key: K, value: BodyMeasurements[K]) => {
@@ -22,7 +24,7 @@ export default function BodyInputForm({ onSubmit, initial }: Props) {
 
   return (
     <div className="space-y-4">
-      <h2 className="text-lg font-bold">📏 내 신체 정보</h2>
+      <h2 className="text-lg font-bold">{t('body.title')}</h2>
 
       <div className="flex gap-4">
         <label className="flex items-center gap-1">
@@ -31,7 +33,7 @@ export default function BodyInputForm({ onSubmit, initial }: Props) {
             checked={form.gender === 'male'}
             onChange={() => update('gender', 'male')}
           />
-          남성
+          {t('body.gender.male')}
         </label>
         <label className="flex items-center gap-1">
           <input
@@ -39,13 +41,13 @@ export default function BodyInputForm({ onSubmit, initial }: Props) {
             checked={form.gender === 'female'}
             onChange={() => update('gender', 'female')}
           />
-          여성
+          {t('body.gender.female')}
         </label>
       </div>
 
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="block text-sm text-gray-600">키 (cm)</label>
+          <label className="block text-sm text-gray-600">{t('body.height')}</label>
           <input
             type="number"
             value={form.height}
@@ -54,7 +56,7 @@ export default function BodyInputForm({ onSubmit, initial }: Props) {
           />
         </div>
         <div>
-          <label className="block text-sm text-gray-600">몸무게 (kg)</label>
+          <label className="block text-sm text-gray-600">{t('body.weight')}</label>
           <input
             type="number"
             value={form.weight}
@@ -63,7 +65,7 @@ export default function BodyInputForm({ onSubmit, initial }: Props) {
           />
         </div>
         <div>
-          <label className="block text-sm text-gray-600">어깨너비 (cm)</label>
+          <label className="block text-sm text-gray-600">{t('body.shoulderWidth')}</label>
           <input
             type="number"
             value={form.shoulderWidth}
@@ -72,11 +74,11 @@ export default function BodyInputForm({ onSubmit, initial }: Props) {
           />
         </div>
         <div>
-          <label className="block text-sm text-gray-600">가슴둘레 (cm, 선택)</label>
+          <label className="block text-sm text-gray-600">{t('body.chestCirc')}</label>
           <input
             type="number"
             value={form.chestCirc ?? ''}
-            placeholder="미입력시 추정"
+            placeholder={t('body.chestPlaceholder')}
             onChange={e => update('chestCirc', e.target.value ? +e.target.value : undefined)}
             className="w-full border rounded px-2 py-1"
           />
@@ -87,7 +89,7 @@ export default function BodyInputForm({ onSubmit, initial }: Props) {
         onClick={() => onSubmit(form)}
         className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition cursor-pointer"
       >
-        아바타 생성
+        {t('body.submit')}
       </button>
     </div>
   );
