@@ -161,41 +161,16 @@ export default function App() {
             <h1 className="text-2xl font-bold">{CATEGORY_ICONS[category]} FitSize</h1>
             <p className="text-blue-100 text-sm">{t('app.subtitle')}</p>
           </div>
-          <div className="flex items-center gap-2">
-            {/* Auth button */}
-            {authConfigured && !authLoading && (
-              user ? (
-                <div className="flex items-center gap-2">
-                  <img
-                    src={user.photoURL ?? undefined}
-                    alt=""
-                    className="w-7 h-7 rounded-full border-2 border-white/50"
-                  />
-                  <button
-                    onClick={signOut}
-                    className="text-xs text-blue-100 hover:text-white cursor-pointer"
-                  >
-                    {t('auth.logout')}
-                  </button>
-                </div>
-              ) : (
-                <button
-                  onClick={signInWithGoogle}
-                  className="flex items-center gap-1 bg-white/20 hover:bg-white/30 text-white text-xs px-3 py-1.5 rounded-full cursor-pointer transition"
-                >
-                  <span>☁️</span> {t('auth.login')}
-                </button>
-              )
-            )}
+          <div className="flex items-center gap-1 flex-wrap justify-end">
             {/* Language selector */}
-            <div className="flex gap-1">
+            <div className="flex gap-0.5">
               {LOCALES.map(l => {
                 const flag: Record<string, string> = { ko: '🇰🇷', en: '🇺🇸', ja: '🇯🇵' };
                 return (
                   <button
                     key={l}
                     onClick={() => setLocale(l)}
-                    className={`w-8 h-8 rounded-full text-lg flex items-center justify-center cursor-pointer transition ${
+                    className={`w-7 h-7 rounded-full text-base flex items-center justify-center cursor-pointer transition ${
                       locale === l ? 'bg-white/25 ring-2 ring-white' : 'hover:bg-blue-500'
                     }`}
                     title={t(`lang.${l}`)}
@@ -205,6 +180,29 @@ export default function App() {
                 );
               })}
             </div>
+            {/* Auth button */}
+            {authConfigured && !authLoading && (
+              user ? (
+                <button
+                  onClick={signOut}
+                  className="flex items-center gap-1 text-xs text-blue-100 hover:text-white cursor-pointer ml-1"
+                >
+                  <img
+                    src={user.photoURL ?? undefined}
+                    alt=""
+                    className="w-6 h-6 rounded-full border border-white/50"
+                  />
+                  <span className="hidden sm:inline">{t('auth.logout')}</span>
+                </button>
+              ) : (
+                <button
+                  onClick={signInWithGoogle}
+                  className="flex items-center gap-1 bg-white/20 hover:bg-white/30 text-white text-xs px-2 py-1 rounded-full cursor-pointer transition ml-1"
+                >
+                  ☁️ <span className="hidden sm:inline">{t('auth.login')}</span>
+                </button>
+              )
+            )}
           </div>
         </div>
       </header>
