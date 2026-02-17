@@ -77,6 +77,8 @@ export default function FittingCanvas({ body, clothingMeasurements, category = '
             body={body}
             canvasWidth={BASE_WIDTH}
             canvasHeight={BASE_HEIGHT}
+            displayWidth={size.w}
+            displayHeight={size.h}
           />
         )}
       </div>

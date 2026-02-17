@@ -11,6 +11,8 @@ interface Props {
   body: BodyMeasurements;
   canvasWidth: number;
   canvasHeight: number;
+  displayWidth: number;
+  displayHeight: number;
 }
 
 const REGION_LABELS: Record<string, string> = {
@@ -37,6 +39,8 @@ export default function ClothingSvg({
   body,
   canvasWidth,
   canvasHeight,
+  displayWidth,
+  displayHeight,
 }: Props) {
   const fitResult: FitResult = useMemo(
     () => analyzeFit(clothingCm, body),
@@ -61,13 +65,13 @@ export default function ClothingSvg({
 
   return (
     <svg
-      width={canvasWidth}
-      height={canvasHeight}
       viewBox={`0 0 ${canvasWidth} ${canvasHeight}`}
       style={{
         position: 'absolute',
         top: 0,
         left: 0,
+        width: displayWidth,
+        height: displayHeight,
         pointerEvents: 'none',
       }}
     >
