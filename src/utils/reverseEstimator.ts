@@ -115,7 +115,7 @@ export function estimatesToBodyMeasurements(
     gender,
     height,
     weight,
-    shoulderWidth: estimates.shoulderWidth?.value ?? (gender === 'male' ? 45 : 40),
+    shoulderWidth: estimates.shoulderWidth?.value,
     chestCirc: estimates.chestCirc?.value,
     waistCirc: estimates.waistCirc?.value,
     hipCirc: estimates.hipCirc?.value,
