@@ -52,7 +52,6 @@ export function calculateClothingDimensions(
 }
 
 // ── Constants ──
-const TOP_MARGIN = 30;
 
 const COLORS = {
   top: { fill: 'rgba(70, 130, 180, 0.35)', stroke: 'rgba(30, 80, 140, 0.8)' },
@@ -105,7 +104,7 @@ function drawTop(
   cw: number,
 ) {
   const cx = cw / 2;
-  const sy = TOP_MARGIN + av.shoulderY;
+  const sy = av.shoulderY;
   const isLong = cl.category === 'long_sleeve' || cl.category === 'jacket';
   const colors = COLORS.top;
 
@@ -219,15 +218,15 @@ function drawPants(
   cw: number,
 ) {
   const cx = cw / 2;
-  const waistY = TOP_MARGIN + av.shoulderY + av.torsoHeight;
+  const waistY = av.shoulderY + (av.crotchY - av.shoulderY);
   const colors = COLORS.pants;
 
   const wH = (cl.waistWidth ?? av.hipWidth * 0.9) / 2;
   const hipH = (cl.hipWidth ?? av.hipWidth) / 2;
-  const thH = (cl.thighWidth ?? av.legWidth * 1.5) / 2;
-  const knH = (cl.kneeWidth ?? av.legWidth * 1.2) / 2;
+  const thH = (cl.thighWidth ?? av.thighWidth * 1.5) / 2;
+  const knH = (cl.kneeWidth ?? av.thighWidth * 1.2) / 2;
   const hemH = cl.hemWidth / 2;
-  const rise = cl.rise ?? av.torsoHeight * 0.3;
+  const rise = cl.rise ?? (av.crotchY - av.shoulderY) * 0.3;
   const tLen = cl.totalLength;
 
   const hipY = waistY + rise * 0.45;
@@ -236,7 +235,7 @@ function drawPants(
   const kneeY = crotchY + (hemY - crotchY) * 0.45;
 
   // Inner leg gap
-  const gap = av.legWidth * 0.4;
+  const gap = av.thighWidth * 0.4;
 
   setStyle(ctx, colors);
 
@@ -299,7 +298,7 @@ function drawPants(
   const badges: FitBadge[] = [
     { label: '허리', diffCm: ((cl.waistWidth ?? 0) - av.waistWidth) * scale, x: cx + wH + 8, y: waistY + 8 },
     { label: '엉덩이', diffCm: ((cl.hipWidth ?? 0) - av.hipWidth) * scale, x: cx + hipH + 8, y: hipY + 5 },
-    { label: '허벅지', diffCm: ((cl.thighWidth ?? 0) - av.legWidth * 1.3) * scale, x: cx + thH + 8, y: crotchY + 5 },
+    { label: '허벅지', diffCm: ((cl.thighWidth ?? 0) - av.thighWidth * 1.3) * scale, x: cx + thH + 8, y: crotchY + 5 },
   ];
   drawBadges(ctx, badges);
 }
@@ -312,7 +311,7 @@ function drawDress(
   cw: number,
 ) {
   const cx = cw / 2;
-  const sy = TOP_MARGIN + av.shoulderY;
+  const sy = av.shoulderY;
   const colors = COLORS.dress;
 
   const shH = cl.shoulderWidth / 2;
@@ -415,7 +414,7 @@ function drawFitBadges(
   shoulderY: number,
 ) {
   const scale = pxToCmScale(av);
-  const chestY = shoulderY + av.torsoHeight * 0.25;
+  const chestY = shoulderY + (av.crotchY - av.shoulderY) * 0.25;
 
   const badges: FitBadge[] = [
     { label: '어깨', diffCm: (cl.shoulderWidth - av.shoulderWidth) * scale, x: cx + cl.shoulderWidth / 2 + 8, y: shoulderY + 5 },

@@ -1,354 +1,321 @@
 import type { AvatarDimensions } from '../types';
 
 /**
- * Canvas에 2D 아바타를 그린다.
- * 핵심: 인체 실루엣의 자연스러운 곡선과 비례.
+ * 아바타 렌더러 — 단색 실루엣, 해부학적 포인트 기반
+ *
+ * 모든 좌표는 AvatarDimensions에서 계산된 절대값 사용.
+ * 그래디언트/얼굴 없이 실루엣의 정확성에 집중.
  */
 export function drawAvatar(
   ctx: CanvasRenderingContext2D,
-  dims: AvatarDimensions,
+  d: AvatarDimensions,
   canvasWidth: number,
   canvasHeight: number,
 ) {
   const cx = canvasWidth / 2;
-  const top = 30; // topMargin
 
   ctx.clearRect(0, 0, canvasWidth, canvasHeight);
   ctx.save();
 
-  // ── Colors ──
-  const skin = '#F0CBA8';
-  const skinHighlight = '#FADCC4';
-  const skinShadow = '#D4A574';
-  const outline = 'rgba(140, 100, 65, 0.5)';
-  const shadowTint = 'rgba(160, 120, 80, 0.1)';
+  // 단색 스타일
+  const fillColor = '#D4B896';
+  const strokeColor = 'rgba(120, 90, 60, 0.45)';
+  ctx.fillStyle = fillColor;
+  ctx.strokeStyle = strokeColor;
+  ctx.lineWidth = 0.8;
+  ctx.lineJoin = 'round';
+  ctx.lineCap = 'round';
 
-  function radialSkin(x: number, y: number, r: number): CanvasGradient {
-    const g = ctx.createRadialGradient(x - r * 0.15, y - r * 0.2, r * 0.05, x, y, r * 1.1);
-    g.addColorStop(0, skinHighlight);
-    g.addColorStop(0.5, skin);
-    g.addColorStop(1, skinShadow);
-    return g;
-  }
+  // 약한 그림자 (입체감만)
+  const shadow = 'rgba(120, 90, 60, 0.08)';
 
-  // ── Key positions ──
-  const headR = dims.headRadius;
-  const headCY = top + headR;
+  // ── half-widths ──
+  const shH = d.shoulderWidth / 2;
+  const chH = d.chestWidth / 2;
+  const ubH = d.underbustWidth / 2;
+  const waH = d.waistWidth / 2;
+  const hiH = d.hipWidth / 2;
+  const nkH = d.neckWidth / 2;
 
-  const shY = top + dims.shoulderY;
-  const shHalf = dims.shoulderWidth / 2;
-  const chHalf = dims.chestWidth / 2;
-  const waHalf = dims.waistWidth / 2;
-  const hiHalf = dims.hipWidth / 2;
-  const torH = dims.torsoHeight;
-
-  const chestY = shY + torH * 0.22;
-  const waistY = shY + torH * 0.70;
-  const hipY = shY + torH * 0.92;
-
-  const legTop = shY + torH + torH * 0.08;
-  const legLen = dims.legLength;
-  const legW = dims.legWidth / 2;
-
-  const armLen = dims.armLength;
-  const armW = Math.max(dims.armWidth / 2, 8);
-
-  const neckW = dims.neckWidth / 2;
-
-  // ═══════════════════════════════════════
-  // DRAW ORDER: arms behind → torso+legs → head on top
-  // ═══════════════════════════════════════
-
-  // ── ARMS (behind torso) ──
+  // ════════════════════════════════════════
+  // 1. ARMS (뒤에 먼저)
+  // ════════════════════════════════════════
   for (const s of [-1, 1]) {
-    const sx = cx + s * shHalf; // shoulder joint
-    // Arm hangs with slight natural outward angle
-    const elbowX = sx + s * 12;
-    const elbowY = shY + armLen * 0.43;
-    const wristX = sx + s * 16;
-    const wristY = shY + armLen * 0.88;
-    const handEndY = wristY + armW * 2.8;
+    const sx = cx + s * shH;
+    // 팔 각도: 자연스럽게 살짝 벌어짐
+    const elX = sx + s * 14;
+    const wrX = sx + s * 20;
+    const handX = wrX + s * 2;
+    const handEndY = d.wristY + d.upperArmWidth * 2.5;
 
-    // Taper: shoulder → elbow → wrist
-    const upW = armW * 1.3;
-    const elW = armW * 1.0;
-    const wrW = armW * 0.7;
-    const handW = wrW * 1.5;
-
-    ctx.fillStyle = radialSkin(sx, shY + armLen * 0.4, upW * 3);
-    ctx.strokeStyle = outline;
-    ctx.lineWidth = 0.8;
-    ctx.lineJoin = 'round';
+    const upH = d.upperArmWidth / 2;
+    const elH = d.elbowWidth / 2;
+    const faH = d.forearmWidth / 2;
+    const wrH = d.wristWidth / 2;
 
     ctx.beginPath();
-    // Outer arm
-    ctx.moveTo(sx + s * upW, shY + 3);
+    // 외측: 어깨 → 팔꿈치 → 손목
+    ctx.moveTo(sx + s * upH, d.shoulderY + 2);
     ctx.bezierCurveTo(
-      sx + s * upW * 1.15, shY + armLen * 0.15,
-      elbowX + s * elW * 1.05, elbowY - armLen * 0.08,
-      elbowX + s * elW, elbowY,
-    );
-    ctx.bezierCurveTo(
-      elbowX + s * elW * 0.95, elbowY + armLen * 0.08,
-      wristX + s * wrW * 1.1, wristY - armLen * 0.1,
-      wristX + s * wrW, wristY,
-    );
-    // Hand (simple rounded)
-    ctx.quadraticCurveTo(
-      wristX + s * handW, wristY + 5,
-      wristX + s * handW * 0.8, handEndY - 8,
-    );
-    ctx.quadraticCurveTo(
-      wristX + s * handW * 0.3, handEndY,
-      wristX - s * handW * 0.2, handEndY - 5,
-    );
-    ctx.quadraticCurveTo(
-      wristX - s * wrW * 0.5, wristY + 5,
-      wristX - s * wrW, wristY,
-    );
-    // Inner arm back up
-    ctx.bezierCurveTo(
-      wristX - s * wrW * 1.1, wristY - armLen * 0.1,
-      elbowX - s * elW * 0.8, elbowY + armLen * 0.08,
-      elbowX - s * elW * 0.7, elbowY,
+      sx + s * upH * 1.1, d.shoulderY + (d.elbowY - d.shoulderY) * 0.35,
+      elX + s * elH * 1.05, d.elbowY - (d.elbowY - d.shoulderY) * 0.1,
+      elX + s * elH, d.elbowY,
     );
     ctx.bezierCurveTo(
-      elbowX - s * elW * 0.65, elbowY - armLen * 0.08,
-      sx - s * upW * 0.1, shY + armLen * 0.1,
-      sx - s * 2, shY + 5,
+      elX + s * faH, d.elbowY + (d.wristY - d.elbowY) * 0.15,
+      wrX + s * wrH * 1.1, d.wristY - (d.wristY - d.elbowY) * 0.15,
+      wrX + s * wrH, d.wristY,
+    );
+    // 손 (단순 라운드)
+    const hW = wrH * 1.5;
+    ctx.quadraticCurveTo(handX + s * hW, d.wristY + 5, handX + s * hW * 0.6, handEndY);
+    ctx.quadraticCurveTo(handX, handEndY + 3, handX - s * hW * 0.3, handEndY - 3);
+    ctx.quadraticCurveTo(wrX - s * wrH * 0.3, d.wristY + 4, wrX - s * wrH, d.wristY);
+    // 내측: 손목 → 팔꿈치 → 어깨
+    ctx.bezierCurveTo(
+      wrX - s * wrH * 1.1, d.wristY - (d.wristY - d.elbowY) * 0.15,
+      elX - s * faH * 0.7, d.elbowY + (d.wristY - d.elbowY) * 0.15,
+      elX - s * elH * 0.65, d.elbowY,
+    );
+    ctx.bezierCurveTo(
+      elX - s * elH * 0.6, d.elbowY - (d.elbowY - d.shoulderY) * 0.1,
+      sx - s * upH * 0.05, d.shoulderY + (d.elbowY - d.shoulderY) * 0.2,
+      sx - s * 2, d.shoulderY + 4,
     );
     ctx.closePath();
     ctx.fill();
     ctx.stroke();
   }
 
-  // ── TORSO + HIPS (single connected shape) ──
-  ctx.fillStyle = radialSkin(cx, shY + torH * 0.4, Math.max(shHalf, hiHalf));
-  ctx.strokeStyle = outline;
-  ctx.lineWidth = 0.8;
-
+  // ════════════════════════════════════════
+  // 2. TORSO (어깨~가랑이, 하나의 연결된 경로)
+  // ════════════════════════════════════════
   ctx.beginPath();
-  // Start: left shoulder
-  ctx.moveTo(cx - shHalf, shY);
 
-  // Left side: shoulder → chest (deltoid curve, slight outward then in)
-  ctx.bezierCurveTo(
-    cx - shHalf - 2, shY + torH * 0.06,
-    cx - chHalf - 8, chestY - torH * 0.04,
-    cx - chHalf, chestY,
-  );
+  // 왼쪽 실루엣: 어깨 → 가슴 → 언더바스트 → 허리 → 엉덩이 → 가랑이
+  ctx.moveTo(cx - shH, d.shoulderY);
 
-  // Chest → waist (inward taper — the V)
+  // 어깨 → 겨드랑이/가슴 (삼각근 커브)
   ctx.bezierCurveTo(
-    cx - chHalf + 1, chestY + torH * 0.15,
-    cx - waHalf - 2, waistY - torH * 0.1,
-    cx - waHalf, waistY,
+    cx - shH - 1, d.shoulderY + (d.chestY - d.shoulderY) * 0.3,
+    cx - chH - 6, d.chestY - (d.chestY - d.shoulderY) * 0.2,
+    cx - chH, d.chestY,
   );
 
-  // Waist → hip (outward flare)
+  // 가슴 → 언더바스트
   ctx.bezierCurveTo(
-    cx - waHalf - 1, waistY + torH * 0.04,
-    cx - hiHalf - 3, hipY - torH * 0.06,
-    cx - hiHalf, hipY,
+    cx - chH + 1, d.chestY + (d.underbustY - d.chestY) * 0.5,
+    cx - ubH - 2, d.underbustY - (d.underbustY - d.chestY) * 0.2,
+    cx - ubH, d.underbustY,
   );
 
-  // Hip → inner thigh
+  // 언더바스트 → 허리 (가장 좁은 부분)
   ctx.bezierCurveTo(
-    cx - hiHalf + 1, hipY + torH * 0.06,
-    cx - legW * 1.8, legTop - 8,
-    cx - legW * 1.2, legTop,
+    cx - ubH + 1, d.underbustY + (d.waistY - d.underbustY) * 0.4,
+    cx - waH - 2, d.waistY - (d.waistY - d.underbustY) * 0.3,
+    cx - waH, d.waistY,
   );
 
-  // Crotch arch
-  ctx.quadraticCurveTo(cx, legTop + 10, cx + legW * 1.2, legTop);
-
-  // Right side (mirror)
+  // 허리 → 엉덩이 (외측으로 넓어짐)
   ctx.bezierCurveTo(
-    cx + legW * 1.8, legTop - 8,
-    cx + hiHalf - 1, hipY + torH * 0.06,
-    cx + hiHalf, hipY,
-  );
-  ctx.bezierCurveTo(
-    cx + hiHalf + 3, hipY - torH * 0.06,
-    cx + waHalf + 1, waistY + torH * 0.04,
-    cx + waHalf, waistY,
-  );
-  ctx.bezierCurveTo(
-    cx + waHalf + 2, waistY - torH * 0.1,
-    cx + chHalf - 1, chestY + torH * 0.15,
-    cx + chHalf, chestY,
-  );
-  ctx.bezierCurveTo(
-    cx + chHalf + 8, chestY - torH * 0.04,
-    cx + shHalf + 2, shY + torH * 0.06,
-    cx + shHalf, shY,
+    cx - waH - 1, d.waistY + (d.hipY - d.waistY) * 0.3,
+    cx - hiH - 3, d.hipY - (d.hipY - d.waistY) * 0.3,
+    cx - hiH, d.hipY,
   );
 
-  // Neckline (connect shoulders across)
-  ctx.quadraticCurveTo(cx + neckW * 1.5, shY - 4, cx + neckW, shY - 3);
-  ctx.lineTo(cx - neckW, shY - 3);
-  ctx.quadraticCurveTo(cx - neckW * 1.5, shY - 4, cx - shHalf, shY);
+  // 엉덩이 → 가랑이 (안쪽으로 좁아짐)
+  const innerThighH = d.thighWidth / 2;
+  ctx.bezierCurveTo(
+    cx - hiH + 1, d.hipY + (d.crotchY - d.hipY) * 0.5,
+    cx - innerThighH * 1.8, d.crotchY - (d.crotchY - d.hipY) * 0.2,
+    cx - innerThighH * 1.2, d.crotchY,
+  );
+
+  // 가랑이 아치
+  ctx.quadraticCurveTo(cx, d.crotchY + 8, cx + innerThighH * 1.2, d.crotchY);
+
+  // 오른쪽 (대칭)
+  ctx.bezierCurveTo(
+    cx + innerThighH * 1.8, d.crotchY - (d.crotchY - d.hipY) * 0.2,
+    cx + hiH - 1, d.hipY + (d.crotchY - d.hipY) * 0.5,
+    cx + hiH, d.hipY,
+  );
+  ctx.bezierCurveTo(
+    cx + hiH + 3, d.hipY - (d.hipY - d.waistY) * 0.3,
+    cx + waH + 1, d.waistY + (d.hipY - d.waistY) * 0.3,
+    cx + waH, d.waistY,
+  );
+  ctx.bezierCurveTo(
+    cx + waH + 2, d.waistY - (d.waistY - d.underbustY) * 0.3,
+    cx + ubH - 1, d.underbustY + (d.waistY - d.underbustY) * 0.4,
+    cx + ubH, d.underbustY,
+  );
+  ctx.bezierCurveTo(
+    cx + ubH + 2, d.underbustY - (d.underbustY - d.chestY) * 0.2,
+    cx + chH - 1, d.chestY + (d.underbustY - d.chestY) * 0.5,
+    cx + chH, d.chestY,
+  );
+  ctx.bezierCurveTo(
+    cx + chH + 6, d.chestY - (d.chestY - d.shoulderY) * 0.2,
+    cx + shH + 1, d.shoulderY + (d.chestY - d.shoulderY) * 0.3,
+    cx + shH, d.shoulderY,
+  );
+
+  // 목 연결
+  ctx.quadraticCurveTo(cx + nkH * 1.4, d.shoulderY - 3, cx + nkH, d.neckBottomY);
+  ctx.lineTo(cx - nkH, d.neckBottomY);
+  ctx.quadraticCurveTo(cx - nkH * 1.4, d.shoulderY - 3, cx - shH, d.shoulderY);
 
   ctx.closePath();
   ctx.fill();
   ctx.stroke();
 
-  // Subtle waist indentation shadow
-  ctx.fillStyle = shadowTint;
+  // 허리라인 그림자 (입체감)
+  ctx.fillStyle = shadow;
+  ctx.beginPath();
+  ctx.ellipse(cx, d.waistY, waH * 0.9, 3, 0, 0, Math.PI);
+  ctx.fill();
+
+  // 배꼽
+  ctx.beginPath();
+  ctx.ellipse(cx, d.waistY - 8, 1.5, 2.5, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = fillColor;
+
+  // ════════════════════════════════════════
+  // 3. LEGS
+  // ════════════════════════════════════════
   for (const s of [-1, 1]) {
-    ctx.beginPath();
-    ctx.moveTo(cx + s * waHalf, waistY - torH * 0.05);
-    ctx.quadraticCurveTo(
-      cx + s * (waHalf + 3), waistY,
-      cx + s * waHalf, waistY + torH * 0.05,
-    );
-    ctx.quadraticCurveTo(
-      cx + s * (waHalf - 2), waistY,
-      cx + s * waHalf, waistY - torH * 0.05,
-    );
-    ctx.fill();
-  }
-
-  // ── LEGS ──
-  for (const s of [-1, 1]) {
-    const legCX = cx + s * hiHalf * 0.42;
-    const thighW = legW * 1.25;
-    const kneeW = legW * 0.75;
-    const calfW = legW * 0.8;
-    const ankleW = legW * 0.45;
-
-    const kneeY = legTop + legLen * 0.46;
-    const calfPeak = legTop + legLen * 0.60;
-    const ankleY = legTop + legLen * 0.94;
-    const footTip = ankleY + 14;
-
-    ctx.fillStyle = radialSkin(legCX, legTop + legLen * 0.4, thighW * 2);
-    ctx.strokeStyle = outline;
-    ctx.lineWidth = 0.8;
+    const legCX = cx + s * hiH * 0.42;
+    const thH = d.thighWidth / 2;
+    const knH = d.kneeWidth / 2;
+    const caH = d.calfWidth / 2;
+    const anH = d.ankleWidth / 2;
+    const footEnd = d.ankleY + 14;
 
     ctx.beginPath();
-    // Outer thigh (tapers)
-    ctx.moveTo(legCX + s * thighW, legTop);
+
+    // 외측 허벅지
+    ctx.moveTo(legCX + s * thH, d.crotchY);
     ctx.bezierCurveTo(
-      legCX + s * thighW, legTop + legLen * 0.15,
-      legCX + s * kneeW * 1.1, kneeY - legLen * 0.06,
-      legCX + s * kneeW, kneeY,
+      legCX + s * thH * 1.0, d.crotchY + (d.kneeY - d.crotchY) * 0.3,
+      legCX + s * knH * 1.15, d.kneeY - (d.kneeY - d.crotchY) * 0.15,
+      legCX + s * knH, d.kneeY,
     );
-    // Outer calf (bulge then taper)
+
+    // 외측 종아리 (볼록)
     ctx.bezierCurveTo(
-      legCX + s * calfW * 1.15, kneeY + legLen * 0.06,
-      legCX + s * calfW * 1.1, calfPeak,
-      legCX + s * calfW * 0.9, calfPeak + legLen * 0.05,
+      legCX + s * caH * 1.2, d.kneeY + (d.calfY - d.kneeY) * 0.4,
+      legCX + s * caH * 1.15, d.calfY - (d.calfY - d.kneeY) * 0.1,
+      legCX + s * caH, d.calfY,
     );
+
+    // 종아리 → 발목
     ctx.bezierCurveTo(
-      legCX + s * calfW * 0.6, calfPeak + legLen * 0.15,
-      legCX + s * ankleW * 1.2, ankleY - legLen * 0.05,
-      legCX + s * ankleW, ankleY,
+      legCX + s * caH * 0.7, d.calfY + (d.ankleY - d.calfY) * 0.4,
+      legCX + s * anH * 1.3, d.ankleY - (d.ankleY - d.calfY) * 0.2,
+      legCX + s * anH, d.ankleY,
     );
-    // Foot
+
+    // 발
     ctx.quadraticCurveTo(
-      legCX + s * ankleW * 0.8, ankleY + 7,
-      legCX + s * legW * 1.8, footTip,
+      legCX + s * anH * 0.8, d.ankleY + 6,
+      legCX + s * d.footLength, footEnd,
     );
     ctx.quadraticCurveTo(
-      legCX + s * legW * 0.5, footTip + 3,
-      legCX - s * ankleW * 0.3, footTip - 1,
+      legCX + s * d.footLength * 0.3, footEnd + 3,
+      legCX - s * anH * 0.2, footEnd - 2,
     );
     ctx.quadraticCurveTo(
-      legCX - s * ankleW * 0.8, ankleY + 5,
-      legCX - s * ankleW, ankleY,
+      legCX - s * anH * 0.6, d.ankleY + 4,
+      legCX - s * anH, d.ankleY,
     );
-    // Inner calf
+
+    // 내측 종아리 ← 발목
     ctx.bezierCurveTo(
-      legCX - s * ankleW * 1.1, ankleY - legLen * 0.05,
-      legCX - s * calfW * 0.5, calfPeak + legLen * 0.15,
-      legCX - s * calfW * 0.7, calfPeak + legLen * 0.05,
+      legCX - s * anH * 1.2, d.ankleY - (d.ankleY - d.calfY) * 0.2,
+      legCX - s * caH * 0.55, d.calfY + (d.ankleY - d.calfY) * 0.4,
+      legCX - s * caH * 0.7, d.calfY,
     );
+
+    // 내측 무릎 ← 종아리
     ctx.bezierCurveTo(
-      legCX - s * calfW * 0.9, calfPeak,
-      legCX - s * kneeW * 0.95, kneeY + legLen * 0.06,
-      legCX - s * kneeW * 0.7, kneeY,
+      legCX - s * caH * 0.9, d.calfY - (d.calfY - d.kneeY) * 0.1,
+      legCX - s * knH * 1.0, d.kneeY + (d.calfY - d.kneeY) * 0.4,
+      legCX - s * knH * 0.65, d.kneeY,
     );
-    // Inner thigh
+
+    // 내측 허벅지
     ctx.bezierCurveTo(
-      legCX - s * kneeW * 0.9, kneeY - legLen * 0.06,
-      legCX - s * thighW * 0.8, legTop + legLen * 0.12,
-      legCX - s * thighW * 0.65, legTop,
+      legCX - s * knH * 0.9, d.kneeY - (d.kneeY - d.crotchY) * 0.15,
+      legCX - s * thH * 0.75, d.crotchY + (d.kneeY - d.crotchY) * 0.2,
+      legCX - s * thH * 0.6, d.crotchY,
     );
+
     ctx.closePath();
     ctx.fill();
     ctx.stroke();
 
-    // Knee highlight
-    ctx.fillStyle = shadowTint;
+    // 무릎 힌트
+    ctx.fillStyle = shadow;
     ctx.beginPath();
-    ctx.ellipse(legCX, kneeY, kneeW * 0.35, legLen * 0.02, 0, 0, Math.PI * 2);
+    ctx.ellipse(legCX + s * 1, d.kneeY, knH * 0.35, d.legLength * 0.015, 0, 0, Math.PI * 2);
     ctx.fill();
+    ctx.fillStyle = fillColor;
   }
 
-  // ── NECK ──
-  const neckTop = headCY + headR * 0.82;
-  const neckBot = shY - 2;
-  ctx.fillStyle = radialSkin(cx, (neckTop + neckBot) / 2, neckW * 2);
-  ctx.strokeStyle = outline;
-  ctx.lineWidth = 0.8;
+  // ════════════════════════════════════════
+  // 4. NECK
+  // ════════════════════════════════════════
   ctx.beginPath();
-  ctx.moveTo(cx - neckW, neckTop);
-  ctx.bezierCurveTo(cx - neckW * 1.1, (neckTop + neckBot) / 2, cx - neckW * 1.2, neckBot, cx - neckW * 1.3, neckBot + 2);
-  ctx.lineTo(cx + neckW * 1.3, neckBot + 2);
-  ctx.bezierCurveTo(cx + neckW * 1.2, neckBot, cx + neckW * 1.1, (neckTop + neckBot) / 2, cx + neckW, neckTop);
+  ctx.moveTo(cx - nkH, d.neckTopY);
+  ctx.bezierCurveTo(
+    cx - nkH * 1.05, (d.neckTopY + d.neckBottomY) / 2,
+    cx - nkH * 1.15, d.neckBottomY,
+    cx - nkH * 1.25, d.neckBottomY + 2,
+  );
+  ctx.lineTo(cx + nkH * 1.25, d.neckBottomY + 2);
+  ctx.bezierCurveTo(
+    cx + nkH * 1.15, d.neckBottomY,
+    cx + nkH * 1.05, (d.neckTopY + d.neckBottomY) / 2,
+    cx + nkH, d.neckTopY,
+  );
   ctx.closePath();
   ctx.fill();
 
-  // ── HEAD ──
-  // Slightly narrower at jaw
-  ctx.fillStyle = radialSkin(cx, headCY, headR);
-  ctx.strokeStyle = outline;
-  ctx.lineWidth = 0.8;
+  // ════════════════════════════════════════
+  // 5. HEAD (실루엣만 — 얼굴 없음)
+  // ════════════════════════════════════════
+  const hr = d.headRadius;
+
+  // 머리 형태: 위는 둥글고 아래는 턱으로 좁아짐
   ctx.beginPath();
-  // Top of head (round)
-  ctx.ellipse(cx, headCY - headR * 0.05, headR * 0.88, headR * 0.95, 0, Math.PI + 0.2, -0.2);
-  // Jaw line (narrower, V-shape hint)
-  ctx.quadraticCurveTo(cx + headR * 0.85, headCY + headR * 0.5, cx + headR * 0.45, headCY + headR * 0.92);
-  ctx.quadraticCurveTo(cx, headCY + headR * 1.02, cx - headR * 0.45, headCY + headR * 0.92);
-  ctx.quadraticCurveTo(cx - headR * 0.85, headCY + headR * 0.5, cx - headR * 0.88, headCY - headR * 0.05);
+  // 두개골 상단 (타원)
+  ctx.ellipse(cx, d.headCY - hr * 0.08, hr * 0.88, hr * 0.9, 0, Math.PI + 0.25, -0.25);
+  // 오른쪽 턱라인
+  ctx.quadraticCurveTo(
+    cx + hr * 0.82, d.headCY + hr * 0.45,
+    cx + hr * 0.4, d.headCY + hr * 0.9,
+  );
+  // 턱끝
+  ctx.quadraticCurveTo(cx, d.headCY + hr * 0.98, cx - hr * 0.4, d.headCY + hr * 0.9);
+  // 왼쪽 턱라인
+  ctx.quadraticCurveTo(
+    cx - hr * 0.82, d.headCY + hr * 0.45,
+    cx - hr * 0.88, d.headCY - hr * 0.08,
+  );
   ctx.closePath();
   ctx.fill();
   ctx.stroke();
 
-  // Simple hair silhouette
-  ctx.fillStyle = '#3A2A1A';
-  ctx.beginPath();
-  ctx.ellipse(cx, headCY - headR * 0.12, headR * 0.94, headR * 0.72, 0, Math.PI, 0);
-  ctx.fill();
-
-  // Ears
+  // 귀
   for (const s of [-1, 1]) {
-    ctx.fillStyle = skin;
-    ctx.strokeStyle = outline;
-    ctx.lineWidth = 0.6;
     ctx.beginPath();
-    ctx.ellipse(cx + s * headR * 0.86, headCY + headR * 0.05, headR * 0.08, headR * 0.16, s * 0.15, 0, Math.PI * 2);
+    ctx.ellipse(cx + s * hr * 0.85, d.headCY + hr * 0.05, hr * 0.07, hr * 0.15, s * 0.15, 0, Math.PI * 2);
     ctx.fill();
     ctx.stroke();
   }
-
-  // Minimal face: just eyes and mouth
-  const eyeY = headCY + headR * 0.0;
-  const eyeGap = headR * 0.3;
-  ctx.fillStyle = '#3A2A1A';
-  for (const s of [-1, 1]) {
-    ctx.beginPath();
-    ctx.ellipse(cx + s * eyeGap, eyeY, headR * 0.09, headR * 0.05, 0, 0, Math.PI * 2);
-    ctx.fill();
-  }
-
-  // Mouth
-  ctx.strokeStyle = '#C08060';
-  ctx.lineWidth = 1.2;
-  ctx.beginPath();
-  ctx.arc(cx, headCY + headR * 0.48, headR * 0.15, 0.15 * Math.PI, 0.85 * Math.PI);
-  ctx.stroke();
 
   ctx.restore();
 }
