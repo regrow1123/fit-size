@@ -51,6 +51,11 @@ export default function ReverseInputForm({ onSubmit }: Props) {
   const [garmentName, setGarmentName] = useState('');
   const [editingNameId, setEditingNameId] = useState<string | null>(null);
   const [editingNameValue, setEditingNameValue] = useState('');
+  const [showDirectInput, setShowDirectInput] = useState(false);
+  const [directShoulder, setDirectShoulder] = useState<string>('');
+  const [directChest, setDirectChest] = useState<string>('');
+  const [directWaist, setDirectWaist] = useState<string>('');
+  const [directHip, setDirectHip] = useState<string>('');
 
   // Load from localStorage on mount
   useEffect(() => {
@@ -79,7 +84,15 @@ export default function ReverseInputForm({ onSubmit }: Props) {
     return garments;
   }, [garments, currentReverseMeasurements, category]);
 
-  const estimates = useMemo(() => estimateBodyFromGarments(allGarments), [allGarments]);
+  const estimates = useMemo(() => {
+    const est = estimateBodyFromGarments(allGarments);
+    // Direct inputs override garment estimates
+    if (directShoulder) est.shoulderWidth = { value: +directShoulder, count: 1 };
+    if (directChest) est.chestCirc = { value: +directChest, count: 1 };
+    if (directWaist) est.waistCirc = { value: +directWaist, count: 1 };
+    if (directHip) est.hipCirc = { value: +directHip, count: 1 };
+    return est;
+  }, [allGarments, directShoulder, directChest, directWaist, directHip]);
 
   const handleAddMeasurement = useCallback((startId: string, endId: string, value: number) => {
     const id = `m${measurementIdCounter++}`;
@@ -179,20 +192,26 @@ export default function ReverseInputForm({ onSubmit }: Props) {
     const est = estimateBodyFromGarments(finalGarments);
     const body = estimatesToBodyMeasurements(est, gender, height, weight);
 
+    // Override with direct input values if provided
+    if (directShoulder) body.shoulderWidth = +directShoulder;
+    if (directChest) body.chestCirc = +directChest;
+    if (directWaist) body.waistCirc = +directWaist;
+    if (directHip) body.hipCirc = +directHip;
+
     // Save profile with body measurements
     saveProfile({ gender, height, weight, bodyMeasurements: body, updatedAt: Date.now() });
 
     onSubmit(body);
   };
 
-  const hasEstimates = Object.keys(estimates).length > 0;
+  const hasEstimates = Object.keys(estimates).length > 0 || directShoulder || directChest || directWaist || directHip;
   const totalDataPoints = Object.values(estimates).reduce((sum, e) => sum + (e?.count ?? 0), 0);
 
   return (
     <div className="space-y-4">
-      <h2 className="text-lg font-bold">👔 내 옷으로 체형 추정</h2>
+      <h2 className="text-lg font-bold">🧍 내 체형 설정</h2>
       <p className="text-sm text-gray-500">
-        가지고 있는 옷의 실측치와 착용감을 입력하면 체형을 추정합니다.
+        기본 정보를 입력하고, 옷 데이터나 직접 치수로 체형을 정확하게 맞추세요.
       </p>
 
       {/* Basic info */}
@@ -216,6 +235,40 @@ export default function ReverseInputForm({ onSubmit }: Props) {
             <input type="number" value={weight} onChange={e => setWeight(+e.target.value)} className="w-full border rounded px-2 py-1 text-sm" />
           </div>
         </div>
+      </div>
+
+      {/* Direct body measurement input (optional) */}
+      <div className="bg-gray-50 rounded-lg p-3 space-y-3">
+        <button
+          onClick={() => setShowDirectInput(!showDirectInput)}
+          className="flex items-center justify-between w-full text-sm font-bold text-gray-700 cursor-pointer"
+        >
+          <span>체형 직접 입력 (선택)</span>
+          <span className="text-gray-400">{showDirectInput ? '▲' : '▼'}</span>
+        </button>
+        {showDirectInput && (
+          <>
+            <p className="text-xs text-gray-400">알고 있는 치수가 있으면 입력하세요. 비워두면 자동 추정됩니다.</p>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs text-gray-500">어깨너비 (cm)</label>
+                <input type="number" value={directShoulder} placeholder="자동 추정" onChange={e => setDirectShoulder(e.target.value)} className="w-full border rounded px-2 py-1 text-sm" />
+              </div>
+              <div>
+                <label className="block text-xs text-gray-500">가슴둘레 (cm)</label>
+                <input type="number" value={directChest} placeholder="자동 추정" onChange={e => setDirectChest(e.target.value)} className="w-full border rounded px-2 py-1 text-sm" />
+              </div>
+              <div>
+                <label className="block text-xs text-gray-500">허리둘레 (cm)</label>
+                <input type="number" value={directWaist} placeholder="자동 추정" onChange={e => setDirectWaist(e.target.value)} className="w-full border rounded px-2 py-1 text-sm" />
+              </div>
+              <div>
+                <label className="block text-xs text-gray-500">엉덩이둘레 (cm)</label>
+                <input type="number" value={directHip} placeholder="자동 추정" onChange={e => setDirectHip(e.target.value)} className="w-full border rounded px-2 py-1 text-sm" />
+              </div>
+            </div>
+          </>
+        )}
       </div>
 
       {/* Saved garments */}
