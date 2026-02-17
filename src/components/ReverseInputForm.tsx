@@ -98,6 +98,36 @@ function Section({
   );
 }
 
+/** Sub-section with lighter styling (2-1, 2-2, etc.) */
+function SubSection({
+  num,
+  title,
+  desc,
+  children,
+}: {
+  num: string;
+  title: string;
+  desc?: string;
+  children: ReactNode;
+}) {
+  return (
+    <div className="border border-gray-150 rounded-lg overflow-hidden">
+      <div className="flex items-center gap-2.5 px-3 py-2 bg-gray-50/80">
+        <span className="flex-shrink-0 w-6 h-6 rounded-full bg-gray-300 text-white text-[11px] font-bold flex items-center justify-center">
+          {num}
+        </span>
+        <div>
+          <h4 className="text-xs font-bold text-gray-600">{title}</h4>
+          {desc && <p className="text-[11px] text-gray-400">{desc}</p>}
+        </div>
+      </div>
+      <div className="p-3 space-y-3">
+        {children}
+      </div>
+    </div>
+  );
+}
+
 let garmentIdCounter = Date.now();
 let measurementIdCounter = 1;
 
@@ -335,9 +365,8 @@ export default function ReverseInputForm({ onSubmit }: Props) {
 
       {/* ── SECTION 2: 체형 보정 (선택) ── */}
       <Section num={2} title={t('reverse.refineTitle')} tag={t('reverse.tagOptional')} tagColor="gray" desc={t('reverse.refineDesc')} collapsible defaultOpen={garments.length > 0 || !!directShoulder || !!directChest || !!directWaist || !!directHip}>
-        {/* Direct measurement inputs */}
-        <div className="space-y-2">
-          <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wide">{t('reverse.directInput')}</h4>
+        {/* 2-1: Direct measurement inputs */}
+        <SubSection num="2-1" title={t('reverse.directInput')} desc={t('reverse.directInputDesc')}>
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs text-gray-500">{t('reverse.shoulder')}</label>
@@ -356,12 +385,10 @@ export default function ReverseInputForm({ onSubmit }: Props) {
               <input type="number" value={directHip} placeholder={t('reverse.autoEstimate')} onChange={e => setDirectHip(e.target.value)} className="w-full border rounded px-2 py-1 text-sm" />
             </div>
           </div>
-        </div>
+        </SubSection>
 
-        <div className="border-t border-gray-200 my-3" />
-
-        {/* Garment-based estimation */}
-        <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wide">{t('reverse.garmentSection')}</h4>
+        {/* 2-2: Garment-based estimation */}
+        <SubSection num="2-2" title={t('reverse.garmentSection')} desc={t('reverse.garmentSectionDesc')}>
 
       {/* Saved garments */}
       {garments.length > 0 && (
@@ -574,7 +601,7 @@ export default function ReverseInputForm({ onSubmit }: Props) {
           {t('reverse.addAnother')}
         </button>
       )}
-
+        </SubSection>
       </Section>
 
       {/* ── SECTION 3: 추정 결과 + 제출 ── */}

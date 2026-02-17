@@ -50,6 +50,7 @@ const ko: TranslationDict = {
   'reverse.refineTitle': '체형 보정',
   'reverse.refineDesc': '더 정확한 결과를 원하면 치수를 직접 입력하거나 옷 데이터를 추가하세요',
   'reverse.garmentSection': '옷 데이터로 추정',
+  'reverse.garmentSectionDesc': '가지고 있는 옷의 실측치와 착용감을 입력하면 체형을 역추정합니다',
   'reverse.directInput': '직접 입력',
   'reverse.directInputDesc': '알고 있는 치수가 있으면 입력하세요. 비워두면 자동 추정됩니다.',
   'reverse.autoEstimate': '자동 추정',

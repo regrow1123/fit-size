@@ -50,6 +50,7 @@ const en: TranslationDict = {
   'reverse.refineTitle': 'Refine Body',
   'reverse.refineDesc': 'For better accuracy, enter measurements directly or add garment data',
   'reverse.garmentSection': 'Estimate from clothing',
+  'reverse.garmentSectionDesc': 'Enter garment measurements and fit feedback to reverse-estimate your body',
   'reverse.directInput': 'Direct input',
   'reverse.directInputDesc': 'Enter measurements you know. Leave empty for auto-estimation.',
   'reverse.autoEstimate': 'Auto',

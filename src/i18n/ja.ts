@@ -50,6 +50,7 @@ const ja: TranslationDict = {
   'reverse.refineTitle': '体型補正',
   'reverse.refineDesc': 'より正確な結果のために、寸法を直接入力するか服データを追加してください',
   'reverse.garmentSection': '服データから推定',
+  'reverse.garmentSectionDesc': '持っている服の実寸とフィット感を入力すると体型を逆推定します',
   'reverse.directInput': '直接入力',
   'reverse.directInputDesc': '知っている寸法があれば入力してください。空欄は自動推定されます。',
   'reverse.autoEstimate': '自動推定',
