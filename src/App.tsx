@@ -164,8 +164,8 @@ export default function App() {
                 </div>
               </>
             )}
-            {step === 'clothing' && (
-              <ClothingInputForm onSubmit={handleClothingSubmit} />
+            {step === 'clothing' && body && (
+              <ClothingInputForm onSubmit={handleClothingSubmit} body={body} />
             )}
             {step === 'result' && (
               <div className="space-y-4">
