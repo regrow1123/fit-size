@@ -2,10 +2,11 @@ import { useState, useEffect } from 'react';
 import type { BodyMeasurements, ClothingCategory } from './types';
 import ClothingInputForm from './components/ClothingInputForm';
 import FittingCanvas from './components/FittingCanvas';
+import FittingResult from './components/FittingResult';
 // import FittingPixi from './components/FittingPixi';
 import ReverseInputForm from './components/ReverseInputForm';
 import ProductRecommendations from './components/ProductRecommendations';
-import FitResultPanel from './components/FitResultPanel';
+// import FitResultPanel from './components/FitResultPanel';
 import { importWardrobeFromText, exportWardrobeText, subscribe, loadWardrobe } from './utils/storage';
 import { useTranslation, type Locale } from './i18n';
 import { useAuth, saveToCloud, loadFromCloud } from './firebase';
@@ -295,47 +296,51 @@ export default function App() {
             {step === 'clothing' && body && (
               <ClothingInputForm onSubmit={handleClothingSubmit} body={body} />
             )}
-            {step === 'result' && body && clothing && (
-              <div className="space-y-4">
-                <h2 className="text-lg font-bold">{t('app.result.title')}</h2>
+            {step === 'result' && <div />}
+          </div>
 
-                <FitResultPanel body={body} clothing={clothing} category={category} />
-
-                <div className="flex gap-2 pt-2">
-                  <button
-                    onClick={() => setStep('clothing')}
-                    className="flex-1 border border-blue-600 text-blue-600 py-2 rounded hover:bg-blue-50 cursor-pointer"
-                  >
-                    {t('app.result.editMeasurements')}
-                  </button>
-                  <button
-                    onClick={reset}
-                    className="flex-1 border border-gray-400 text-gray-600 py-2 rounded hover:bg-gray-50 cursor-pointer"
-                  >
-                    {t('app.result.startOver')}
-                  </button>
+          {step !== 'result' && (
+            <div className="flex justify-center">
+              {body ? (
+                <FittingCanvas
+                  body={body}
+                  category={category}
+                />
+              ) : (
+                <div className="w-full max-w-[400px] aspect-[4/7] border rounded-lg bg-white flex items-center justify-center text-gray-400 text-center px-4 whitespace-pre-line">
+                  {t('app.avatarPlaceholder')}
                 </div>
-              </div>
-            )}
-          </div>
-
-          <div className="flex justify-center">
-            {body ? (
-              <FittingCanvas
-                body={body}
-                clothingMeasurements={step === 'result' ? clothing ?? undefined : undefined}
-                category={category}
-              />
-            ) : (
-              <div className="w-full max-w-[400px] aspect-[4/7] border rounded-lg bg-white flex items-center justify-center text-gray-400 text-center px-4 whitespace-pre-line">
-                {t('app.avatarPlaceholder')}
-              </div>
-            )}
-          </div>
+              )}
+            </div>
+          )}
         </div>
 
-        {step === 'result' && (
-          <ProductRecommendations category={category} />
+        {/* 3단계: 결과 — 별도 레이아웃 (아바타 중심 + 라벨) */}
+        {step === 'result' && body && clothing && (
+          <div className="space-y-6">
+            <FittingResult
+              body={body}
+              clothingMeasurements={clothing}
+              category={category}
+            />
+
+            <div className="flex gap-3 max-w-md mx-auto">
+              <button
+                onClick={() => setStep('clothing')}
+                className="flex-1 border border-blue-600 text-blue-600 py-3 rounded-xl font-medium hover:bg-blue-50 cursor-pointer transition"
+              >
+                {t('app.result.editMeasurements')}
+              </button>
+              <button
+                onClick={reset}
+                className="flex-1 border border-gray-400 text-gray-600 py-3 rounded-xl font-medium hover:bg-gray-50 cursor-pointer transition"
+              >
+                {t('app.result.startOver')}
+              </button>
+            </div>
+
+            <ProductRecommendations category={category} />
+          </div>
         )}
       </main>
     </div>
