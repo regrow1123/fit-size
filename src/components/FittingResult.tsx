@@ -125,8 +125,9 @@ export default function FittingResult({ body, clothingMeasurements, category }: 
             const easeStr = r.ease >= 0 ? `+${r.ease.toFixed(1)}` : r.ease.toFixed(1);
 
             // 라벨 위치 (아바타 바로 옆에 배치)
-            const GAP = 1;
-            const lx = cfg.side === 'left' ? PAD_LEFT - LABEL_W - GAP : PAD_LEFT + SVG_W + GAP;
+            // 라벨이 아바타에 살짝 겹치도록 안쪽으로
+            const OVERLAP = 20;
+            const lx = cfg.side === 'left' ? PAD_LEFT - LABEL_W + OVERLAP : PAD_LEFT + SVG_W - OVERLAP;
             const ly = cfg.labelY - LABEL_H / 2;
 
             // 화살표 시작점 (라벨 끝)
