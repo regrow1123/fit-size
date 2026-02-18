@@ -1,16 +1,17 @@
 import type { BodyMeasurements } from '../types';
 import type { FitLevel, FitResult } from './types';
 
+// 불투명 옷 색상 — 몸을 완전히 가림
 const FIT_COLORS: Record<FitLevel, string> = {
-  good: 'rgba(76, 175, 80, 0.3)',
-  loose: 'rgba(255, 193, 7, 0.3)',
-  tight: 'rgba(244, 67, 54, 0.3)',
+  good: 'rgb(160, 200, 220)',
+  loose: 'rgb(220, 200, 140)',
+  tight: 'rgb(220, 160, 155)',
 };
 
 const STROKE_COLORS: Record<FitLevel, string> = {
-  good: 'rgba(76, 175, 80, 0.75)',
-  loose: 'rgba(255, 193, 7, 0.75)',
-  tight: 'rgba(244, 67, 54, 0.75)',
+  good: 'rgba(60, 120, 160, 0.8)',
+  loose: 'rgba(180, 150, 50, 0.8)',
+  tight: 'rgba(200, 80, 70, 0.8)',
 };
 
 function classify(ease: number, min: number, max: number): FitLevel {

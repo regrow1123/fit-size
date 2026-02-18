@@ -10,36 +10,39 @@ const perpY = -sinA;
 /** Shared intermediate values computed from avatar + clothing dims */
 function calc(av: AvatarDimensions, cl: ClothingDimensions, cx: number) {
   const sy = av.shoulderY;
-  const shH = cl.shoulderWidth / 2;
-  const chH = cl.chestWidth / 2;
-  const hemH = cl.hemWidth / 2;
-  const nkH = av.neckWidth / 2;
-  const hemY = sy + cl.totalLength;
-
+  const avShH = av.shoulderWidth / 2;
   const avChH = av.chestWidth / 2;
   const avUbH = av.underbustWidth / 2;
   const avWaH = av.waistWidth / 2;
   const avHiH = av.hipWidth / 2;
 
+  // 옷 폭은 최소한 몸 폭 이상 — 몸이 옷 밖으로 튀어나오지 않도록
+  const shH = Math.max(cl.shoulderWidth / 2, avShH);
+  const chH = Math.max(cl.chestWidth / 2, avChH);
+  const hemH = Math.max(cl.hemWidth / 2, avWaH); // 밑단도 최소 허리 이상
+  const nkH = av.neckWidth / 2;
+  const hemY = sy + cl.totalLength;
+
   const clothToBodyRatio = chH / avChH;
-  const armpitH = chH * 0.97;
+  const armpitH = Math.max(chH * 0.97, avChH);
   const armpitY = av.chestY - (av.chestY - sy) * 0.35;
-  const ubH = avUbH * clothToBodyRatio;
+  const ubH = Math.max(avUbH * clothToBodyRatio, avUbH);
 
   const waistInRange = av.waistY < hemY;
   const waH = waistInRange
-    ? Math.max(avWaH * clothToBodyRatio, hemH * 0.95)
+    ? Math.max(avWaH * clothToBodyRatio, hemH * 0.95, avWaH)
     : hemH;
 
   const hipInRange = av.hipY < hemY;
   const hiH = hipInRange
-    ? Math.max(avHiH * clothToBodyRatio * 0.95, hemH)
+    ? Math.max(avHiH * clothToBodyRatio * 0.95, hemH, avHiH)
     : hemH;
 
   const slLen = cl.sleeveLength;
-  const slTopW = cl.sleeveWidth;
-  const slEndW = slTopW * 0.88;
-  const slMidW = slTopW * 0.94;
+  const minSleeveW = av.upperArmWidth / 2;
+  const slTopW = Math.max(cl.sleeveWidth, minSleeveW);
+  const slEndW = Math.max(slTopW * 0.88, minSleeveW * 0.85);
+  const slMidW = Math.max(slTopW * 0.94, minSleeveW * 0.9);
 
   return {
     cx, sy, shH, chH, hemH, nkH, hemY,
