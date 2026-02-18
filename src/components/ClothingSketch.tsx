@@ -4,8 +4,9 @@ import type { ClothingCategory, PointMeasurement } from '../types';
 import { useTranslation } from '../i18n';
 import { ANCHOR_I18N_KEYS } from '../i18n/anchorKeys';
 
-const CANVAS_W = 460;
-const CANVAS_H = 580;
+// viewBox와 동일한 비율 (400:700) 유지 — 앵커 포인트가 viewBox 기준 normalized 좌표
+const CANVAS_W = 400;
+const CANVAS_H = 700;
 const POINT_RADIUS = 7;
 const HOVER_RADIUS = 10;
 
