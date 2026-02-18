@@ -12,19 +12,20 @@ function calc(av: AvatarDimensions, cl: ClothingDimensions, cx: number) {
   const avWaH = av.waistWidth / 2;
   const avHiH = av.hipWidth / 2;
 
-  // 어깨: 아바타보다 최소 10% 넓게
-  const shH = Math.max(cl.shoulderWidth / 2, avShH * 1.1);
-  // 가슴: 아바타보다 살짝만 넓게 (너무 과하지 않게)
-  const chH = Math.max(cl.chestWidth / 2, avChH * 1.05);
-  const hemH = Math.max(cl.hemWidth / 2, avWaH);
+  // 어깨: 아바타보다 최소 15% 넓게
+  const shH = Math.max(cl.shoulderWidth / 2, avShH * 1.15);
+  // 가슴: 아바타보다 10% 넓게
+  const chH = Math.max(cl.chestWidth / 2, avChH * 1.1);
+  // 밑단: 아바타 허리보다 넓게
+  const hemH = Math.max(cl.hemWidth / 2, avWaH * 1.1);
   const nkH = av.neckWidth / 2;
   const hemY = sy + cl.totalLength;
 
-  // 소매: 아바타 팔 전체를 덮을 수 있도록 넉넉하게
+  // 소매: 아바타 팔을 완전히 덮어야 함
   const slLen = cl.sleeveLength;
-  const minSlW = av.upperArmWidth * 1.4; // 팔 폭의 140% 이상
-  const slTopW = Math.max(cl.sleeveWidth * 0.6, minSlW);
-  const slEndW = Math.max(slTopW * 0.88, av.upperArmWidth * 1.2);
+  const minSlW = av.upperArmWidth * 1.8; // 팔 폭의 180%
+  const slTopW = Math.max(cl.sleeveWidth * 0.7, minSlW);
+  const slEndW = Math.max(slTopW * 0.88, av.upperArmWidth * 1.5);
 
   // 소매 끝점 계산 (어깨에서 15도 각도로)
   const sinA = Math.sin(SLEEVE_ANGLE);
@@ -46,11 +47,11 @@ function calc(av: AvatarDimensions, cl: ClothingDimensions, cx: number) {
  */
 function buildBody(av: AvatarDimensions, cl: ClothingDimensions, cx: number): string {
   const c = calc(av, cl, cx);
-  const { sy, shH, nkH, chH, hemH, hemY, armpitY, sinA, cosA, slLen, slTopW, slEndW } = c;
+  const { sy, shH, nkH, chH, hemH, hemY, armpitY, avChH, sinA, cosA, slLen, slTopW, slEndW } = c;
 
-  // 소매 끝점 (어깨에서 slLen만큼 15도 각도)
-  const sleeveOuterHalfW = slTopW * 0.55;
-  const sleeveEndHalfW = slEndW * 0.5;
+  // 소매 반폭 (팔을 완전히 덮도록)
+  const sleeveOuterHalfW = slTopW * 0.6;
+  const sleeveEndHalfW = slEndW * 0.55;
 
   // 허리/엉덩이 영역
   const waistInRange = av.waistY < hemY;
@@ -58,8 +59,8 @@ function buildBody(av: AvatarDimensions, cl: ClothingDimensions, cx: number): st
   const waH = waistInRange ? Math.max(hemH * 0.95, av.waistWidth / 2) : hemH;
   const hiH = hipInRange ? Math.max(hemH, av.hipWidth / 2) : hemH;
 
-  // 몸통 폭 (겨드랑이 레벨)
-  const bodyW = Math.max(chH, shH * 0.95);
+  // 몸통 폭 (겨드랑이 레벨) — 아바타 가슴보다 넓게
+  const bodyW = Math.max(chH, shH * 0.95, avChH * 1.1);
 
   const d: string[] = [];
 
