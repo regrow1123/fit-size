@@ -158,14 +158,19 @@ export default function AvatarSvg({ avatarDims: d, canvasWidth }: Props) {
     p += ` C ${legCX + s * caH * 0.7} ${d.calfY + (d.ankleY - d.calfY) * 0.4}, ${legCX + s * anH * 1.3} ${d.ankleY - (d.ankleY - d.calfY) * 0.2}, ${legCX + s * anH} ${d.ankleY}`;
     // 발등: 발목에서 발끝 방향으로
     p += ` Q ${legCX + s * anH * 0.8} ${d.ankleY + 6}, ${legCX + s * footLen} ${footEnd}`;
-    // 발가락 — 손가락처럼 미묘한 울퉁불퉁만 (4개 범프)
+    // 발가락 — 발끝(+X) 방향으로 나란히, 손가락처럼 미묘한 힌트만
+    const toeStartX = legCX + s * footLen;
+    const toeStartY = footEnd;
+    const toeSpread = 6; // 발가락 전체 Y 범위
     for (let t = 0; t < 4; t++) {
       const ratio = (t + 1) / 5;
-      const bx = legCX + s * (footLen * (1 - ratio) - anH * 0.2 * ratio);
-      const bump = [1.0, 1.5, 1.2, 0.8][t];
-      p += ` Q ${bx + s * footLen * 0.04} ${footEnd + bump + 1}, ${bx - s * footLen * 0.04} ${footEnd + bump * 0.5}`;
+      const ty = toeStartY - toeSpread * 0.3 + ratio * toeSpread;
+      const bump = [1.2, 1.8, 1.5, 1.0][t]; // 돌출 크기
+      // 발끝 방향(+s*X)으로 살짝 튀어나왔다 돌아오는 범프
+      p += ` Q ${toeStartX + s * bump} ${ty - 0.5}, ${toeStartX + s * bump * 0.3} ${ty + 0.8}`;
     }
-    p += ` Q ${legCX - s * anH * 0.3} ${footEnd + 1}, ${legCX - s * anH * 0.2} ${footEnd - 2}`;
+    // 발바닥으로 복귀
+    p += ` Q ${legCX + s * footLen * 0.3} ${footEnd + 3}, ${legCX - s * anH * 0.2} ${footEnd - 2}`;
     p += ` Q ${legCX - s * anH * 0.6} ${d.ankleY + 4}, ${legCX - s * anH} ${d.ankleY}`;
     p += ` C ${legCX - s * anH * 1.2} ${d.ankleY - (d.ankleY - d.calfY) * 0.2}, ${legCX - s * caH * 0.55} ${d.calfY + (d.ankleY - d.calfY) * 0.4}, ${legCX - s * caH * 0.7} ${d.calfY}`;
     p += ` C ${legCX - s * caH * 0.9} ${d.calfY - (d.calfY - d.kneeY) * 0.1}, ${legCX - s * knH * 1.0} ${d.kneeY + (d.calfY - d.kneeY) * 0.4}, ${legCX - s * knH * 0.65} ${d.kneeY}`;
