@@ -214,6 +214,7 @@ export default function App() {
         {/* Step indicator */}
         <StepIndicator step={step} body={body} clothing={clothing} onStepClick={setStep} />
 
+        {step !== 'result' && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div className="bg-white rounded-lg shadow p-6">
             {step === 'body' && (
@@ -296,24 +297,22 @@ export default function App() {
             {step === 'clothing' && body && (
               <ClothingInputForm onSubmit={handleClothingSubmit} body={body} />
             )}
-            {step === 'result' && <div />}
           </div>
 
-          {step !== 'result' && (
-            <div className="flex justify-center">
-              {body ? (
-                <FittingCanvas
-                  body={body}
-                  category={category}
-                />
-              ) : (
-                <div className="w-full max-w-[400px] aspect-[4/7] border rounded-lg bg-white flex items-center justify-center text-gray-400 text-center px-4 whitespace-pre-line">
-                  {t('app.avatarPlaceholder')}
-                </div>
-              )}
-            </div>
-          )}
+          <div className="flex justify-center">
+            {body ? (
+              <FittingCanvas
+                body={body}
+                category={category}
+              />
+            ) : (
+              <div className="w-full max-w-[400px] aspect-[4/7] border rounded-lg bg-white flex items-center justify-center text-gray-400 text-center px-4 whitespace-pre-line">
+                {t('app.avatarPlaceholder')}
+              </div>
+            )}
+          </div>
         </div>
+        )}
 
         {/* 3단계: 결과 — 별도 레이아웃 (아바타 중심 + 라벨) */}
         {step === 'result' && body && clothing && (
