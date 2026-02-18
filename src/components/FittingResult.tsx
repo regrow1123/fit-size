@@ -148,7 +148,7 @@ export default function FittingResult({ body, clothingMeasurements, category }: 
       </div>
 
       {/* 아바타 + 라벨 */}
-      <div ref={containerRef} className="relative w-full max-w-[400px]">
+      <div ref={containerRef} className="relative w-full max-w-[400px] overflow-hidden">
         <svg
           viewBox={`0 0 ${BASE_WIDTH} ${BASE_HEIGHT}`}
           style={{ width: size.w, height: size.h }}
