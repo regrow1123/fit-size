@@ -80,27 +80,27 @@ function warpMesh(
       const origX = (i / GRID_X) * W;
       const dx = origX - cx;
 
-      let newX = cx + dx * ratio;
+      const origDx = Math.abs(origX - cx);
+      const baseShX = baseDims.shoulderWidth / 2;
+      const isSleeve = isTshirt && origDx > baseShX * 0.7 && origY < chestY + 30;
+
+      // 소매 영역은 수평 스케일 적용 안 함 (회전만)
+      let newX = cx + dx * (isSleeve ? 1 : ratio);
       let newY = origY;
 
-      // 티셔츠 소매 워핑: 어깨 바깥 영역 + 상체 영역
-      if (isTshirt && origY >= shoulderY - 40 && origY <= chestY + 20) {
-        const absDx = Math.abs(newX - cx);
-        if (absDx > shX * 0.8) {
-          // 어깨 밖 영역 — T-포즈에서 15도로 꺾기
-          const side = newX > cx ? 1 : -1;
-          const pivotX = cx + side * shX;
-          const pivotY = shoulderY;
-          const relX = newX - pivotX;
-          const relY = newY - pivotY;
+      // 소매: T-포즈 → 15도로 회전
+      if (isSleeve) {
+        const side = origX > cx ? 1 : -1;
+        const pivotX = cx + side * shX;
+        const pivotY = shoulderY;
+        const relX = newX - pivotX;
+        const relY = newY - pivotY;
 
-          // T-포즈에서 relX는 팔 방향(수평), relY는 수직
-          // 15도 회전 적용 (오른쪽: 시계방향, 왼쪽: 반시계)
-          const cos = Math.cos(side * ARM_ANGLE);
-          const sin = Math.sin(side * ARM_ANGLE);
-          newX = pivotX + relX * cos - relY * sin;
-          newY = pivotY + relX * sin + relY * cos;
-        }
+        const angle = side * ARM_ANGLE;
+        const cos = Math.cos(angle);
+        const sin = Math.sin(angle);
+        newX = pivotX + relX * cos - relY * sin;
+        newY = pivotY + relX * sin + relY * cos;
       }
 
       verts[idx] = newX;
@@ -108,6 +108,13 @@ function warpMesh(
     }
   }
   buf.update();
+  if (isTshirt) {
+    // 디버그: 소매 끝 정점 위치 확인
+    const lastRowTop = 6; // shoulderY 근처 row
+    const rightEnd = GRID_X; // 가장 오른쪽 열
+    const dbgIdx = (lastRowTop * (GRID_X + 1) + rightEnd) * 2;
+    console.log(`[warp] tshirt sleeve end vertex: (${verts[dbgIdx].toFixed(1)}, ${verts[dbgIdx+1].toFixed(1)})`);
+  }
 }
 
 export default function FittingPixi({ body, clothingMeasurements, category = 'tshirt' }: Props) {
