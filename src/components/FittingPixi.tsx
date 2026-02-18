@@ -108,7 +108,13 @@ export default function FittingPixi({ body, clothingMeasurements, category = 'ts
       resolution: Math.min(window.devicePixelRatio || 1, 2),
       autoDensity: true,
     });
-    containerRef.current.appendChild(app.view as HTMLCanvasElement);
+    try {
+      const view = app.view as unknown as HTMLCanvasElement;
+      containerRef.current.appendChild(view);
+    } catch (e) {
+      console.error('PixiJS init failed:', e);
+      return;
+    }
     appRef.current = app;
 
     // 텍스처 로드
