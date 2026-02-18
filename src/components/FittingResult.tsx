@@ -31,8 +31,8 @@ const LEVEL_STYLE: Record<FitLevel, { color: string; bg: string; border: string;
 
 // 전체 캔버스(SVG+라벨 패딩)에서의 라벨/화살표 설정
 // viewBox를 넓혀서 양옆에 라벨 공간 확보
-const PADDED_W = 540; // SVG_W(400) + 좌70 + 우70
-const PAD_LEFT = 70;
+const PADDED_W = 550; // SVG_W(400) + 좌75 + 우75
+const PAD_LEFT = 75;
 // 아바타 부위별 타겟 좌표 (원래 400x700 viewBox 기준 → padded 기준으로 오프셋)
 // side: 라벨이 어느 쪽에 위치하는지
 interface PartTarget {
@@ -46,13 +46,11 @@ function getPartTargets(av: ReturnType<typeof calculateAvatarDimensions>): Recor
   const shH = av.shoulderWidth / 2;
   const clothSY = av.shoulderY - 15; // 옷 시작 Y (tshirt.ts에서 -15 오프셋)
   return {
-    // labelY: 라벨이 그려지는 Y (겹침 방지로 분산)
-    // ty: 아바타 위 실제 타겟 점 (사선 연결)
-    shoulder: { tx: cx + shH, ty: clothSY + 5, side: 'right', labelY: 80 },
-    sleeve:   { tx: cx + shH + 25, ty: clothSY + 60, side: 'right', labelY: 170 },
-    waist:    { tx: cx + av.waistWidth / 2, ty: av.waistY, side: 'right', labelY: 270 },
-    chest:    { tx: cx - av.chestWidth / 2, ty: av.chestY, side: 'left', labelY: 140 },
-    length:   { tx: cx - 10, ty: clothSY + 240, side: 'left', labelY: 290 },
+    shoulder: { tx: cx + shH, ty: clothSY + 5, side: 'right', labelY: clothSY + 5 },
+    sleeve:   { tx: cx + shH + 25, ty: clothSY + 60, side: 'right', labelY: clothSY + 60 },
+    waist:    { tx: cx + av.waistWidth / 2, ty: av.waistY, side: 'right', labelY: av.waistY },
+    chest:    { tx: cx - av.chestWidth / 2, ty: av.chestY, side: 'left', labelY: av.chestY },
+    length:   { tx: cx - 10, ty: clothSY + 240, side: 'left', labelY: clothSY + 240 },
   };
 }
 
