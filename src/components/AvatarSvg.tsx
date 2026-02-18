@@ -152,16 +152,24 @@ export default function AvatarSvg({ avatarDims: d, canvasWidth }: Props) {
     const anH = d.ankleWidth / 2;
     const footEnd = d.ankleY + 14;
 
+    // 정면 다리: 바깥쪽(+s)은 완만, 안쪽(-s)은 종아리 볼록
     let p = `M ${legCX + s * thH} ${d.crotchY}`;
-    p += ` C ${legCX + s * thH * 1.0} ${d.crotchY + (d.kneeY - d.crotchY) * 0.3}, ${legCX + s * knH * 1.15} ${d.kneeY - (d.kneeY - d.crotchY) * 0.15}, ${legCX + s * knH} ${d.kneeY}`;
-    p += ` C ${legCX + s * caH * 1.2} ${d.kneeY + (d.calfY - d.kneeY) * 0.4}, ${legCX + s * caH * 1.15} ${d.calfY - (d.calfY - d.kneeY) * 0.1}, ${legCX + s * caH} ${d.calfY}`;
-    p += ` C ${legCX + s * caH * 0.7} ${d.calfY + (d.ankleY - d.calfY) * 0.4}, ${legCX + s * anH * 1.3} ${d.ankleY - (d.ankleY - d.calfY) * 0.2}, ${legCX + s * anH} ${d.ankleY}`;
+    // 바깥쪽: 허벅지→무릎 (약간 볼록)
+    p += ` C ${legCX + s * thH * 0.98} ${d.crotchY + (d.kneeY - d.crotchY) * 0.35}, ${legCX + s * knH * 1.05} ${d.kneeY - (d.kneeY - d.crotchY) * 0.15}, ${legCX + s * knH} ${d.kneeY}`;
+    // 바깥쪽: 무릎→종아리 (완만한 볼록)
+    p += ` C ${legCX + s * caH * 1.05} ${d.kneeY + (d.calfY - d.kneeY) * 0.4}, ${legCX + s * caH * 1.0} ${d.calfY - (d.calfY - d.kneeY) * 0.1}, ${legCX + s * caH * 0.85} ${d.calfY}`;
+    // 바깥쪽: 종아리→발목
+    p += ` C ${legCX + s * caH * 0.6} ${d.calfY + (d.ankleY - d.calfY) * 0.4}, ${legCX + s * anH * 1.1} ${d.ankleY - (d.ankleY - d.calfY) * 0.2}, ${legCX + s * anH} ${d.ankleY}`;
+    // 발 (바깥쪽으로)
     p += ` Q ${legCX + s * anH * 0.8} ${d.ankleY + 6}, ${legCX + s * d.footLength} ${footEnd}`;
     p += ` Q ${legCX + s * d.footLength * 0.3} ${footEnd + 3}, ${legCX - s * anH * 0.2} ${footEnd - 2}`;
     p += ` Q ${legCX - s * anH * 0.6} ${d.ankleY + 4}, ${legCX - s * anH} ${d.ankleY}`;
-    p += ` C ${legCX - s * anH * 1.2} ${d.ankleY - (d.ankleY - d.calfY) * 0.2}, ${legCX - s * caH * 0.55} ${d.calfY + (d.ankleY - d.calfY) * 0.4}, ${legCX - s * caH * 0.7} ${d.calfY}`;
-    p += ` C ${legCX - s * caH * 0.9} ${d.calfY - (d.calfY - d.kneeY) * 0.1}, ${legCX - s * knH * 1.0} ${d.kneeY + (d.calfY - d.kneeY) * 0.4}, ${legCX - s * knH * 0.65} ${d.kneeY}`;
-    p += ` C ${legCX - s * knH * 0.9} ${d.kneeY - (d.kneeY - d.crotchY) * 0.15}, ${legCX - s * thH * 0.75} ${d.crotchY + (d.kneeY - d.crotchY) * 0.2}, ${legCX - s * thH * 0.6} ${d.crotchY}`;
+    // 안쪽: 발목→종아리 (종아리 내측 볼록 — 정면 특징)
+    p += ` C ${legCX - s * anH * 1.0} ${d.ankleY - (d.ankleY - d.calfY) * 0.2}, ${legCX - s * caH * 0.85} ${d.calfY + (d.ankleY - d.calfY) * 0.3}, ${legCX - s * caH * 0.75} ${d.calfY}`;
+    // 안쪽: 종아리→무릎 (내측 볼록)
+    p += ` C ${legCX - s * caH * 0.95} ${d.calfY - (d.calfY - d.kneeY) * 0.15}, ${legCX - s * knH * 0.85} ${d.kneeY + (d.calfY - d.kneeY) * 0.35}, ${legCX - s * knH * 0.6} ${d.kneeY}`;
+    // 안쪽: 무릎→허벅지
+    p += ` C ${legCX - s * knH * 0.7} ${d.kneeY - (d.kneeY - d.crotchY) * 0.15}, ${legCX - s * thH * 0.65} ${d.crotchY + (d.kneeY - d.crotchY) * 0.2}, ${legCX - s * thH * 0.55} ${d.crotchY}`;
     p += ' Z';
     legPaths.push(p);
     kneeCenters.push({ cx: legCX + s * 1, cy: d.kneeY, rx: knH * 0.35, ry: d.legLength * 0.015, s });
