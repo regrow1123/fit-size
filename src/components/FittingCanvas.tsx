@@ -16,6 +16,23 @@ const BASE_WIDTH = 400;
 const BASE_HEIGHT = 700;
 const ASPECT = BASE_HEIGHT / BASE_WIDTH;
 
+// ── 고정 체형 (175cm / 70kg 남성) ──
+const FIXED_BODY: BodyMeasurements = {
+  height: 175,
+  weight: 70,
+  gender: 'male' as const,
+};
+
+// ── 고정 옷 수치 (기본 반팔 상의) ──
+const FIXED_CLOTHING = new Map<string, number>([
+  ['shoulderWidth', 45],
+  ['chestWidth', 50],
+  ['totalLength', 70],
+  ['sleeveLength', 25],
+  ['hemWidth', 48],
+  ['sleeveCirc', 36],
+]);
+
 export default function FittingCanvas({ body, clothingMeasurements, category = 'tshirt' }: Props) {
   const { t } = useTranslation();
   const containerRef = useRef<HTMLDivElement>(null);
@@ -35,17 +52,15 @@ export default function FittingCanvas({ body, clothingMeasurements, category = '
     return () => ro.disconnect();
   }, [measure]);
 
+  // 고정값 사용 (체형/옷 수치 변화 무시)
   const avatarDims: AvatarDimensions = useMemo(
-    () => calculateAvatarDimensions(body),
-    [body],
+    () => calculateAvatarDimensions(FIXED_BODY),
+    [],
   );
 
   const clothingDims: ClothingDimensions | null = useMemo(
-    () =>
-      clothingMeasurements
-        ? calculateClothingDimensions(clothingMeasurements, body.height, category)
-        : null,
-    [clothingMeasurements, body.height, category],
+    () => calculateClothingDimensions(FIXED_CLOTHING, FIXED_BODY.height, category),
+    [category],
   );
 
   return (
@@ -60,12 +75,12 @@ export default function FittingCanvas({ body, clothingMeasurements, category = '
           canvasWidth={BASE_WIDTH}
           canvasHeight={BASE_HEIGHT}
         />
-        {clothingDims && clothingMeasurements && (
+        {clothingDims && (
           <ClothingSvg
             avatarDims={avatarDims}
             clothingDims={clothingDims}
-            clothingCm={clothingMeasurements}
-            body={body}
+            clothingCm={clothingMeasurements ?? FIXED_CLOTHING}
+            body={FIXED_BODY}
             canvasWidth={BASE_WIDTH}
             canvasHeight={BASE_HEIGHT}
           />
