@@ -94,16 +94,35 @@ function computeKeyCoords(): TshirtKeyCoords {
 
 const KEY = computeKeyCoords();
 
-// 원본 좌표 → normalized (0~1) with bounding box fit + padding
+// uniform scale: 종횡비 유지하면서 캔버스에 fit
+// ClothingSketch 캔버스: 400×700
+const SKETCH_W = 400;
+const SKETCH_H = 700;
+
+function computeFitTransform() {
+  const rangeX = KEY.maxX - KEY.minX;
+  const rangeY = KEY.maxY - KEY.minY;
+  const padX = rangeX * PADDING;
+  const padY = rangeY * PADDING;
+  const contentW = rangeX + padX * 2;
+  const contentH = rangeY + padY * 2;
+  // uniform scale: 비율 유지
+  const scale = Math.min(SKETCH_W / contentW, SKETCH_H / contentH);
+  const fittedW = contentW * scale;
+  const fittedH = contentH * scale;
+  // center offset
+  const offsetX = (SKETCH_W - fittedW) / 2;
+  const offsetY = (SKETCH_H - fittedH) / 2;
+  return { scale, padX, padY, offsetX, offsetY };
+}
+
+const FIT = computeFitTransform();
+
 function normX(x: number): number {
-  const range = KEY.maxX - KEY.minX;
-  const pad = range * PADDING;
-  return (x - KEY.minX + pad) / (range + pad * 2);
+  return (FIT.offsetX + ((x - KEY.minX) + FIT.padX) * FIT.scale) / SKETCH_W;
 }
 function normY(y: number): number {
-  const range = KEY.maxY - KEY.minY;
-  const pad = range * PADDING;
-  return (y - KEY.minY + pad) / (range + pad * 2);
+  return (FIT.offsetY + ((y - KEY.minY) + FIT.padY) * FIT.scale) / SKETCH_H;
 }
 
 const TSHIRT_POINTS: AnchorPoint[] = [
@@ -134,29 +153,34 @@ function drawTshirtOutline(ctx: CanvasRenderingContext2D, w: number, h: number) 
   const cl = calculateClothingDimensions(FIXED_CLOTHING, FIXED_BODY.height, 'tshirt');
   const pathD = tshirtTemplate.buildBody(av, cl, KEY.cx);
 
-  // bounding box fit: 원본 좌표 → 캔버스에 꽉 차게
+  // uniform scale: 종횡비 유지, 캔버스 중앙 배치
+  // w,h는 실제 canvas 크기 (SKETCH_W, SKETCH_H와 같을 수도 다를 수도)
   const rangeX = KEY.maxX - KEY.minX;
   const rangeY = KEY.maxY - KEY.minY;
   const padX = rangeX * PADDING;
   const padY = rangeY * PADDING;
-  const scaleX = w / (rangeX + padX * 2);
-  const scaleY = h / (rangeY + padY * 2);
+  const contentW = rangeX + padX * 2;
+  const contentH = rangeY + padY * 2;
+  const s = Math.min(w / contentW, h / contentH);
+  const offX = (w - contentW * s) / 2;
+  const offY = (h - contentH * s) / 2;
 
   ctx.save();
-  ctx.translate(-KEY.minX * scaleX + padX * scaleX, -KEY.minY * scaleY + padY * scaleY);
-  ctx.scale(scaleX, scaleY);
+  ctx.translate(offX, offY);
+  ctx.scale(s, s);
+  ctx.translate(-KEY.minX + padX, -KEY.minY + padY);
 
   const path = new Path2D(pathD);
   ctx.fillStyle = '#F0F4F8';
   ctx.fill(path);
   ctx.strokeStyle = '#CBD5E1';
-  ctx.lineWidth = 2 / scaleX;
+  ctx.lineWidth = 2 / s;
   ctx.stroke(path);
 
   // 중심선
   ctx.setLineDash([4, 4]);
   ctx.strokeStyle = '#E2E8F0';
-  ctx.lineWidth = 1 / scaleX;
+  ctx.lineWidth = 1 / s;
   ctx.beginPath();
   ctx.moveTo(KEY.cx, KEY.sy);
   ctx.lineTo(KEY.cx, KEY.hemY);
