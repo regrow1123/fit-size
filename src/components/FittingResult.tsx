@@ -124,8 +124,9 @@ export default function FittingResult({ body, clothingMeasurements, category }: 
             const style = LEVEL_STYLE[r.level];
             const easeStr = r.ease >= 0 ? `+${r.ease.toFixed(1)}` : r.ease.toFixed(1);
 
-            // 라벨 위치
-            const lx = cfg.side === 'left' ? LABEL_PAD : PADDED_W - LABEL_W - LABEL_PAD;
+            // 라벨 위치 (아바타 바로 옆에 배치)
+            const GAP = 4;
+            const lx = cfg.side === 'left' ? PAD_LEFT - LABEL_W - GAP : PAD_LEFT + SVG_W + GAP;
             const ly = cfg.labelY - LABEL_H / 2;
 
             // 화살표 시작점 (라벨 끝)
