@@ -118,38 +118,34 @@ function buildSleeve(av: AvatarDimensions, cl: ClothingDimensions, cx: number, s
 
   const shoulderX = cx + side * shH;
   const shoulderY = sy;
-
-  // 소매는 어깨점에서 아래로 직선으로 뻗는 사다리꼴
-  // 외측 = side 방향, 내측 = 몸통 방향
-  const outerTopX = shoulderX + side * (slTopW * 0.55);
-  const outerBotX = shoulderX + side * (slEndW * 0.55);
-  const innerTopX = shoulderX - side * (slTopW * 0.05);  // 몸통에 약간 겹침
-  const innerBotX = shoulderX - side * (slEndW * 0.15);
-
-  const topY = shoulderY;
-  const botY = shoulderY + slLen;
   const armpitDepth = armpitY - shoulderY;
+  const botY = shoulderY + slLen;
+
+  // 소매를 어깨점 중심으로 그림 (회전 전 = 아래로 직선)
+  // 외측(몸에서 먼 쪽) = +side, 내측(몸 쪽) = -side
+  const halfTopW = slTopW * 0.5;
+  const halfEndW = slEndW * 0.5;
 
   const d: string[] = [];
 
-  // 시작: 어깨점 (외측 상단)
-  d.push(`M ${outerTopX} ${topY}`);
+  // 외측 상단
+  d.push(`M ${shoulderX + side * halfTopW} ${shoulderY}`);
 
-  // 외측: 위 → 아래 (살짝 곡선으로 자연스럽게)
-  d.push(`C ${outerTopX} ${topY + slLen * 0.35}, ${outerBotX} ${botY - slLen * 0.3}, ${outerBotX} ${botY}`);
+  // 외측: 위 → 아래 (약간 테이퍼, 자연스러운 곡선)
+  d.push(`C ${shoulderX + side * halfTopW} ${shoulderY + slLen * 0.4}, ${shoulderX + side * halfEndW} ${botY - slLen * 0.3}, ${shoulderX + side * halfEndW} ${botY}`);
 
-  // 소매 끝단 (둥근 곡선)
-  d.push(`C ${outerBotX - side * 2} ${botY + 2}, ${innerBotX + side * 2} ${botY + 2}, ${innerBotX} ${botY}`);
+  // 소매 끝단 (둥글게)
+  d.push(`C ${shoulderX + side * halfEndW * 0.3} ${botY + 2}, ${shoulderX - side * halfEndW * 0.3} ${botY + 2}, ${shoulderX - side * halfEndW} ${botY}`);
 
-  // 내측: 아래 → 겨드랑이 높이까지
-  const innerArmY = shoulderY + armpitDepth;
-  d.push(`C ${innerBotX} ${botY - slLen * 0.3}, ${innerTopX} ${innerArmY + (botY - innerArmY) * 0.3}, ${innerTopX} ${innerArmY}`);
+  // 내측: 아래 → 겨드랑이 높이
+  d.push(`C ${shoulderX - side * halfEndW} ${botY - slLen * 0.3}, ${shoulderX - side * halfTopW * 0.3} ${shoulderY + armpitDepth + 5}, ${shoulderX - side * halfTopW * 0.3} ${shoulderY + armpitDepth}`);
 
-  // 겨드랑이 → 어깨 (내측 상단 마무리)
-  d.push(`C ${innerTopX} ${innerArmY - armpitDepth * 0.4}, ${shoulderX - side * 1} ${topY + 3}, ${outerTopX} ${topY}`);
+  // 겨드랑이 → 어깨 (내측, 몸통과 겹침)
+  d.push(`L ${shoulderX - side * halfTopW * 0.3} ${shoulderY}`);
 
   d.push('Z');
 
+  // 회전 방향: 오른쪽(side=1)은 시계방향(+)으로 벌어짐, 왼쪽(side=-1)은 반시계(-)
   const angle = side * SLEEVE_ANGLE;
   return {
     path: d.join(' '),
