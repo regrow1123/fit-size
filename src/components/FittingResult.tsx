@@ -87,7 +87,7 @@ export default function FittingResult({ body, clothingMeasurements, category }: 
   const partTargets = useMemo(() => getPartTargets(avatarDims), [avatarDims]);
 
   // 라벨 크기 (viewBox 단위)
-  const LABEL_W = 100;
+  const LABEL_W = 85;
   const LABEL_H = 52;
   const LABEL_PAD = 0;
 
