@@ -152,9 +152,6 @@ export default function AvatarSvg({ avatarDims: d, canvasWidth }: Props) {
     const anH = d.ankleWidth / 2;
     const footEnd = d.ankleY + 14;
     const footLen = d.footLength;
-    const toeBaseY = footEnd;
-    const toeLen = footLen * 0.35;
-
     let p = `M ${legCX + s * thH} ${d.crotchY}`;
     p += ` C ${legCX + s * thH * 1.0} ${d.crotchY + (d.kneeY - d.crotchY) * 0.3}, ${legCX + s * knH * 1.15} ${d.kneeY - (d.kneeY - d.crotchY) * 0.15}, ${legCX + s * knH} ${d.kneeY}`;
     p += ` C ${legCX + s * caH * 1.2} ${d.kneeY + (d.calfY - d.kneeY) * 0.4}, ${legCX + s * caH * 1.15} ${d.calfY - (d.calfY - d.kneeY) * 0.1}, ${legCX + s * caH} ${d.calfY}`;
