@@ -125,7 +125,7 @@ export default function FittingResult({ body, clothingMeasurements, category }: 
             const easeStr = r.ease >= 0 ? `+${r.ease.toFixed(1)}` : r.ease.toFixed(1);
 
             // 라벨 위치 (아바타 바로 옆에 배치)
-            const GAP = 4;
+            const GAP = 1;
             const lx = cfg.side === 'left' ? PAD_LEFT - LABEL_W - GAP : PAD_LEFT + SVG_W + GAP;
             const ly = cfg.labelY - LABEL_H / 2;
 
