@@ -158,16 +158,19 @@ export default function AvatarSvg({ avatarDims: d, canvasWidth }: Props) {
     p += ` C ${legCX + s * caH * 0.7} ${d.calfY + (d.ankleY - d.calfY) * 0.4}, ${legCX + s * anH * 1.3} ${d.ankleY - (d.ankleY - d.calfY) * 0.2}, ${legCX + s * anH} ${d.ankleY}`;
     // 발등: 발목에서 발끝 방향으로
     p += ` Q ${legCX + s * anH * 0.8} ${d.ankleY + 6}, ${legCX + s * footLen} ${footEnd}`;
-    // 발가락 — 발끝(+X) 방향으로 나란히, 손가락처럼 미묘한 힌트만
+    // 발가락 — 손가락과 비슷한 수준으로 표현
     const toeStartX = legCX + s * footLen;
     const toeStartY = footEnd;
-    const toeSpread = 6; // 발가락 전체 Y 범위
-    for (let t = 0; t < 4; t++) {
-      const ratio = (t + 1) / 5;
-      const ty = toeStartY - toeSpread * 0.3 + ratio * toeSpread;
-      const bump = [2.0, 3.0, 2.5, 1.8][t]; // 돌출 크기
-      // 발끝 방향(+s*X)으로 살짝 튀어나왔다 돌아오는 범프
-      p += ` Q ${toeStartX + s * bump} ${ty - 0.5}, ${toeStartX + s * bump * 0.3} ${ty + 0.8}`;
+    const toeSpread = 8;
+    const toeLength = [4.5, 6.0, 5.5, 4.5, 3.5]; // 엄지~새끼
+    for (let t = 0; t < 5; t++) {
+      const ratio = t / 4;
+      const ty = toeStartY - toeSpread * 0.35 + ratio * toeSpread;
+      const tLen = toeLength[t];
+      const tipX = toeStartX + s * tLen;
+      // 발가락 끝으로 나갔다가 둥글게 돌아옴
+      p += ` Q ${tipX} ${ty - 1.2}, ${tipX} ${ty}`;
+      p += ` Q ${tipX} ${ty + 1.2}, ${toeStartX + s * tLen * 0.2} ${ty + 1.0}`;
     }
     // 발바닥으로 복귀
     p += ` Q ${legCX + s * footLen * 0.3} ${footEnd + 3}, ${legCX - s * anH * 0.2} ${footEnd - 2}`;
