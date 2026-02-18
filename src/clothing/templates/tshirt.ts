@@ -12,17 +12,19 @@ function calc(av: AvatarDimensions, cl: ClothingDimensions, cx: number) {
   const avWaH = av.waistWidth / 2;
   const avHiH = av.hipWidth / 2;
 
-  const shH = Math.max(cl.shoulderWidth / 2, avShH);
-  const chH = Math.max(cl.chestWidth / 2, avChH);
+  // 어깨: 아바타보다 최소 10% 넓게
+  const shH = Math.max(cl.shoulderWidth / 2, avShH * 1.1);
+  // 가슴: 아바타보다 살짝만 넓게 (너무 과하지 않게)
+  const chH = Math.max(cl.chestWidth / 2, avChH * 1.05);
   const hemH = Math.max(cl.hemWidth / 2, avWaH);
   const nkH = av.neckWidth / 2;
   const hemY = sy + cl.totalLength;
 
-  // 소매 관련
+  // 소매: 아바타 팔 전체를 덮을 수 있도록 넉넉하게
   const slLen = cl.sleeveLength;
-  const minSlW = av.upperArmWidth * 0.6;
+  const minSlW = av.upperArmWidth * 1.4; // 팔 폭의 140% 이상
   const slTopW = Math.max(cl.sleeveWidth * 0.6, minSlW);
-  const slEndW = Math.max(slTopW * 0.88, minSlW * 0.85);
+  const slEndW = Math.max(slTopW * 0.88, av.upperArmWidth * 1.2);
 
   // 소매 끝점 계산 (어깨에서 15도 각도로)
   const sinA = Math.sin(SLEEVE_ANGLE);
@@ -47,8 +49,8 @@ function buildBody(av: AvatarDimensions, cl: ClothingDimensions, cx: number): st
   const { sy, shH, nkH, chH, hemH, hemY, armpitY, sinA, cosA, slLen, slTopW, slEndW } = c;
 
   // 소매 끝점 (어깨에서 slLen만큼 15도 각도)
-  const sleeveOuterHalfW = slTopW * 0.45;
-  const sleeveEndHalfW = slEndW * 0.4;
+  const sleeveOuterHalfW = slTopW * 0.55;
+  const sleeveEndHalfW = slEndW * 0.5;
 
   // 허리/엉덩이 영역
   const waistInRange = av.waistY < hemY;
