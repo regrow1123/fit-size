@@ -44,12 +44,13 @@ interface PartTarget {
 function getPartTargets(av: ReturnType<typeof calculateAvatarDimensions>): Record<string, PartTarget> {
   const cx = SVG_W / 2 + PAD_LEFT; // 아바타 중심 (padded)
   const shH = av.shoulderWidth / 2;
+  const clothSY = av.shoulderY - 15; // 옷 시작 Y (tshirt.ts에서 -15 오프셋)
   return {
-    shoulder: { tx: cx + shH - 5, ty: av.shoulderY - 10, side: 'right', labelY: av.shoulderY - 10 },
-    chest:    { tx: cx - av.chestWidth / 2 - 5, ty: av.chestY, side: 'left', labelY: av.chestY },
-    waist:    { tx: cx + av.waistWidth / 2 + 5, ty: av.waistY, side: 'right', labelY: av.waistY },
-    length:   { tx: cx - 15, ty: av.shoulderY + 240, side: 'left', labelY: av.shoulderY + 240 },
-    sleeve:   { tx: cx + shH + 30, ty: av.shoulderY + 50, side: 'right', labelY: av.shoulderY + 50 },
+    shoulder: { tx: cx + shH, ty: clothSY + 5, side: 'right', labelY: clothSY + 5 },
+    chest:    { tx: cx - av.chestWidth / 2, ty: av.chestY, side: 'left', labelY: av.chestY },
+    waist:    { tx: cx + av.waistWidth / 2, ty: av.waistY, side: 'right', labelY: av.waistY },
+    length:   { tx: cx, ty: clothSY + 240, side: 'left', labelY: clothSY + 240 },
+    sleeve:   { tx: cx + shH + 25, ty: clothSY + 60, side: 'right', labelY: clothSY + 60 },
   };
 }
 
