@@ -3,6 +3,7 @@ import type { BodyMeasurements, ClothingCategory } from '../types';
 import { calculateAvatarDimensions } from '../utils/avatarCalculator';
 import { calculateClothingDimensions } from '../utils/clothingRenderer';
 import { judgeFit, type FitResult, type FitLevel } from '../utils/fitJudgment';
+import { estimateBodyDimensions } from '../data/bodyStats';
 import { useTranslation } from '../i18n';
 import AvatarSvg from './AvatarSvg';
 import ClothingSvg from './ClothingSvg';
@@ -107,9 +108,21 @@ export default function FittingResult({ body, clothingMeasurements, category }: 
     [category],
   );
 
+  // body에 둘레값이 없으면 추정값으로 채움
+  const fullBody = useMemo(() => {
+    const stats = estimateBodyDimensions(body.gender, body.height, body.weight, body.shoulderWidth, body.chestCirc, body.waistCirc, body.hipCirc);
+    return {
+      ...body,
+      shoulderWidth: body.shoulderWidth ?? stats.shoulderWidth,
+      chestCirc: body.chestCirc ?? stats.chestCirc,
+      waistCirc: body.waistCirc ?? stats.waistCirc,
+      hipCirc: body.hipCirc ?? stats.hipCirc,
+    };
+  }, [body]);
+
   const fitResults = useMemo(
-    () => judgeFit(body, clothingMeasurements, category),
-    [body, clothingMeasurements, category],
+    () => judgeFit(fullBody, clothingMeasurements, category),
+    [fullBody, clothingMeasurements, category],
   );
 
   // 전체 판정
