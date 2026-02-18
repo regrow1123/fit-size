@@ -25,9 +25,13 @@ function buildBody(av: AvatarDimensions, cl: ClothingDimensions, cx: number): st
   const slLen = cl.sleeveLength;
   const slHalfW = Math.max(cl.sleeveWidth * 0.35, av.upperArmWidth * 0.9);
 
+  // 어깨 높이 (목보다 살짝 위)
+  const shoulderRise = 5;
+  const shY = sy - shoulderRise;
+
   // 소매 끝 중심점 (어깨에서 15도 각도로 slLen)
   const rSlEndCX = cx + shH + sinA * slLen;
-  const rSlEndCY = sy + cosA * slLen;
+  const rSlEndCY = shY + cosA * slLen;
   const lSlEndCX = cx - shH - sinA * slLen;
   const lSlEndCY = rSlEndCY;
 
@@ -56,12 +60,13 @@ function buildBody(av: AvatarDimensions, cl: ClothingDimensions, cx: number): st
 
   const d: string[] = [];
 
-  // === 네크라인 ===
-  d.push(`M ${cx - nkH} ${sy - 2}`);
-  d.push(`Q ${cx} ${sy + 8}, ${cx + nkH} ${sy - 2}`);
+  // === 네크라인 (둥글게 U자) ===
+  const neckDip = 14; // 목 파임 깊이
+  d.push(`M ${cx - nkH} ${sy}`);
+  d.push(`C ${cx - nkH * 0.5} ${sy + neckDip}, ${cx + nkH * 0.5} ${sy + neckDip}, ${cx + nkH} ${sy}`);
 
-  // === 오른쪽 어깨 ===
-  d.push(`L ${cx + shH} ${sy}`);
+  // === 오른쪽 어깨 (살짝 위로 경사) ===
+  d.push(`L ${cx + shH} ${sy - shoulderRise}`);
 
   // === 오른쪽 소매 외측 (어깨→소매끝) ===
   d.push(`L ${rSlEndOutX} ${rSlEndOutY}`);
@@ -107,10 +112,10 @@ function buildBody(av: AvatarDimensions, cl: ClothingDimensions, cx: number): st
   d.push(`Q ${lSlEndCX} ${lSlEndCY + 3}, ${lSlEndOutX} ${lSlEndOutY}`);
 
   // === 왼쪽 소매 외측 → 어깨 ===
-  d.push(`L ${cx - shH} ${sy}`);
+  d.push(`L ${cx - shH} ${shY}`);
 
   // === 왼쪽 어깨 → 목 ===
-  d.push(`L ${cx - nkH} ${sy - 2}`);
+  d.push(`L ${cx - nkH} ${sy}`);
 
   d.push('Z');
   return d.join(' ');
