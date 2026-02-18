@@ -54,14 +54,18 @@ function calc(av: AvatarDimensions, cl: ClothingDimensions, cx: number) {
 
 function buildBodyPath(av: AvatarDimensions, cl: ClothingDimensions, cx: number): string {
   const c = calc(av, cl, cx);
-  const { chH, hemH, hemY, armpitH, armpitY, ubH, waH, hiH, waistInRange, hipInRange } = c;
+  const { shH, chH, hemH, hemY, armpitH, armpitY, ubH, waH, hiH, waistInRange, hipInRange } = c;
+  const sy = c.sy;
 
   const p: string[] = [];
 
-  // Start at right armpit
-  p.push(`M ${cx + armpitH} ${armpitY}`);
+  // Start at right shoulder (어깨부터 시작해서 소매와 겹침 보장)
+  p.push(`M ${cx + shH} ${sy}`);
 
-  // Right side: armpit → chest
+  // shoulder → armpit (몸통 옆선)
+  p.push(`C ${cx + shH + 1} ${sy + (armpitY - sy) * 0.4}, ${cx + armpitH + 2} ${armpitY - (armpitY - sy) * 0.2}, ${cx + armpitH} ${armpitY}`);
+
+  // armpit → chest
   p.push(`C ${cx + armpitH - 1} ${armpitY + (av.chestY - armpitY) * 0.5}, ${cx + chH + 2} ${av.chestY - (av.chestY - armpitY) * 0.15}, ${cx + chH} ${av.chestY}`);
 
   // chest → underbust
@@ -100,6 +104,12 @@ function buildBodyPath(av: AvatarDimensions, cl: ClothingDimensions, cx: number)
 
   // chest → armpit
   p.push(`C ${cx - chH - 2} ${av.chestY - (av.chestY - armpitY) * 0.15}, ${cx - armpitH + 1} ${armpitY + (av.chestY - armpitY) * 0.5}, ${cx - armpitH} ${armpitY}`);
+
+  // armpit → left shoulder
+  p.push(`C ${cx - armpitH - 2} ${armpitY - (armpitY - sy) * 0.2}, ${cx - shH - 1} ${sy + (armpitY - sy) * 0.4}, ${cx - shH} ${sy}`);
+
+  // shoulder line (top, connects back to right shoulder via neckline area)
+  p.push(`L ${cx + shH} ${sy}`);
 
   p.push('Z');
   return p.join(' ');
