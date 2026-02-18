@@ -28,8 +28,18 @@ export default function ClothingSvg({
   const cx = canvasWidth / 2;
   const template = tshirtTemplate;
 
-  const silhouettePath = useMemo(
-    () => template.buildSilhouette(avatarDims, clothingDims, cx),
+  const bodyPath = useMemo(
+    () => template.buildBody(avatarDims, clothingDims, cx),
+    [avatarDims, clothingDims, cx],
+  );
+
+  const leftSleeve = useMemo(
+    () => template.buildSleeve(avatarDims, clothingDims, cx, -1),
+    [avatarDims, clothingDims, cx],
+  );
+
+  const rightSleeve = useMemo(
+    () => template.buildSleeve(avatarDims, clothingDims, cx, 1),
     [avatarDims, clothingDims, cx],
   );
 
@@ -38,6 +48,7 @@ export default function ClothingSvg({
       id: ov.id,
       fitKey: ov.fitKey,
       path: ov.buildPath(avatarDims, clothingDims, cx),
+      sleeveSide: ov.sleeveSide,
     })),
     [avatarDims, clothingDims, cx],
   );
@@ -47,18 +58,48 @@ export default function ClothingSvg({
     [avatarDims, clothingDims, cx],
   );
 
+  const getSleeveTransform = (side?: 1 | -1): string | undefined => {
+    if (side === 1) return rightSleeve.transform;
+    if (side === -1) return leftSleeve.transform;
+    return undefined;
+  };
+
   return (
     <g>
-      {/* clipPath definition */}
+      {/* clipPath: body + both sleeves */}
       <defs>
         <clipPath id="clothing-clip">
-          <path d={silhouettePath} />
+          <path d={bodyPath} />
+          <path d={leftSleeve.path} transform={leftSleeve.transform} />
+          <path d={rightSleeve.path} transform={rightSleeve.transform} />
         </clipPath>
       </defs>
 
-      {/* Base silhouette */}
+      {/* Layer 1-2: Sleeves behind body */}
+      <g transform={leftSleeve.transform}>
+        <path
+          d={leftSleeve.path}
+          fill={SILHOUETTE_FILL}
+          stroke={SILHOUETTE_STROKE}
+          strokeWidth={1.5}
+          strokeLinejoin="round"
+          strokeLinecap="round"
+        />
+      </g>
+      <g transform={rightSleeve.transform}>
+        <path
+          d={rightSleeve.path}
+          fill={SILHOUETTE_FILL}
+          stroke={SILHOUETTE_STROKE}
+          strokeWidth={1.5}
+          strokeLinejoin="round"
+          strokeLinecap="round"
+        />
+      </g>
+
+      {/* Layer 3: Body in front */}
       <path
-        d={silhouettePath}
+        d={bodyPath}
         fill={SILHOUETTE_FILL}
         stroke={SILHOUETTE_STROKE}
         strokeWidth={1.5}
@@ -66,23 +107,25 @@ export default function ClothingSvg({
         strokeLinecap="round"
       />
 
-      {/* Fit color overlays (clipped to silhouette) */}
+      {/* Layer 4: Fit color overlays (clipped to full silhouette) */}
       <g clipPath="url(#clothing-clip)">
         {overlayPaths.map(ov => {
           const regionFit = fitResult.regions[ov.fitKey];
           const level = regionFit?.level ?? 'good';
+          const transform = getSleeveTransform(ov.sleeveSide);
           return (
             <path
               key={ov.id}
               d={ov.path}
               fill={getFitColor(level)}
               stroke="none"
+              transform={transform}
             />
           );
         })}
       </g>
 
-      {/* Seam lines */}
+      {/* Layer 5: Seam lines */}
       {seams.map((d, i) => (
         <path
           key={`seam-${i}`}

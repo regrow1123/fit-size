@@ -1,14 +1,22 @@
 import type { AvatarDimensions, ClothingCategory, ClothingDimensions } from '../types';
 
+export interface SleeveResult {
+  path: string;
+  transform: string;  // e.g. "rotate(15, 200, 120)"
+}
+
 export interface ClothingOverlay {
-  id: string;       // 'chest' | 'sleeve_left' | 'sleeve_right'
-  fitKey: string;    // analyzeFit의 key
+  id: string;
+  fitKey: string;
   buildPath: (av: AvatarDimensions, cl: ClothingDimensions, cx: number) => string;
+  /** If overlay needs same transform as sleeve */
+  sleeveSide?: 1 | -1;
 }
 
 export interface ClothingTemplate {
   category: ClothingCategory;
-  buildSilhouette: (av: AvatarDimensions, cl: ClothingDimensions, cx: number) => string;
+  buildBody: (av: AvatarDimensions, cl: ClothingDimensions, cx: number) => string;
+  buildSleeve: (av: AvatarDimensions, cl: ClothingDimensions, cx: number, side: 1 | -1) => SleeveResult;
   overlays: ClothingOverlay[];
   buildSeams: (av: AvatarDimensions, cl: ClothingDimensions, cx: number) => string[];
 }
