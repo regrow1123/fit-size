@@ -145,8 +145,8 @@ export default function FittingPixi({ body, clothingMeasurements, category = 'ts
 
     if (tshirtRef.current) {
       if (clothingDims) {
-        const scale = Math.max(1, clothingDims.chestWidth / avatarDims.chestWidth);
-        warpMesh(tshirtRef.current, baseDims, avatarDims, scale);
+        // 일단 체형 워핑만 적용 (옷 사이즈 차이는 나중에 추가)
+        warpMesh(tshirtRef.current, baseDims, avatarDims, 1.05);
         tshirtRef.current.visible = true;
       } else {
         tshirtRef.current.visible = false;
