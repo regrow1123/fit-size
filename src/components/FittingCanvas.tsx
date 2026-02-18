@@ -25,12 +25,12 @@ const FIXED_BODY: BodyMeasurements = {
 
 // ── 고정 옷 수치 (기본 반팔 상의) ──
 const FIXED_CLOTHING = new Map<string, number>([
-  ['shoulderWidth', 45],
-  ['chestWidth', 50],
+  ['shoulderWidth', 50],
+  ['chestWidth', 54],
   ['totalLength', 70],
   ['sleeveLength', 25],
-  ['hemWidth', 48],
-  ['sleeveCirc', 36],
+  ['hemWidth', 52],
+  ['sleeveCirc', 38],
 ]);
 
 export default function FittingCanvas({ body, clothingMeasurements, category = 'tshirt' }: Props) {
