@@ -106,7 +106,7 @@ export default function FittingResult({ body, clothingMeasurements, category }: 
       <div className="w-full bg-white rounded-xl border shadow-sm p-2">
         <svg viewBox={`0 0 ${PADDED_W} ${SVG_H}`} className="w-full h-auto">
           {/* 아바타 + 옷 (원래 위치에서 PAD_LEFT만큼 오른쪽으로) */}
-          <g transform={`translate(${PAD_LEFT + SVG_W * 0.025}, 0) scale(0.95, 1)`}>
+          <g transform={`translate(${PAD_LEFT}, 0)`}>
             <AvatarSvg avatarDims={avatarDims} canvasWidth={SVG_W} canvasHeight={SVG_H} />
             {clothingDims && (
               <ClothingSvg
