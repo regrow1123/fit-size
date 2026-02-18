@@ -25,9 +25,9 @@ function buildBody(av: AvatarDimensions, cl: ClothingDimensions, cx: number): st
   const slLen = cl.sleeveLength;
   const slHalfW = Math.max(cl.sleeveWidth * 0.35, av.upperArmWidth * 0.9);
 
-  // 어깨 높이 (목보다 살짝 위)
-  const shoulderRise = 5;
-  const shY = sy - shoulderRise;
+  // 어깨 높이 (목보다 살짝 아래)
+  const shoulderDrop = 5;
+  const shY = sy + shoulderDrop;
 
   // 소매 끝 중심점 (어깨에서 15도 각도로 slLen)
   const rSlEndCX = cx + shH + sinA * slLen;
@@ -66,7 +66,7 @@ function buildBody(av: AvatarDimensions, cl: ClothingDimensions, cx: number): st
   d.push(`C ${cx - nkH * 0.5} ${sy + neckDip}, ${cx + nkH * 0.5} ${sy + neckDip}, ${cx + nkH} ${sy}`);
 
   // === 오른쪽 어깨 (살짝 위로 경사) ===
-  d.push(`L ${cx + shH} ${sy - shoulderRise}`);
+  d.push(`L ${cx + shH} ${shY}`);
 
   // === 오른쪽 소매 외측 (어깨→소매끝) ===
   d.push(`L ${rSlEndOutX} ${rSlEndOutY}`);
