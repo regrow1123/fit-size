@@ -61,15 +61,31 @@ export function judgeFit(
     results.push({ part: 'chest', bodyValue: bodyVal, clothValue: clothCirc, ease, level: judgeLevel(ease, 'chest') });
   }
 
-  // 허리 — 옷 허리단면/둘레 vs 신체 허리둘레
+  // 허리 — 옷 허리단면/둘레 vs 신체 허리둘레, 또는 밑단폭으로 대체
   if (body.waistCirc) {
     const waistCloth = clothing.has('waistCirc') ? clothing.get('waistCirc')! : null;
     if (waistCloth !== null) {
-      // waistCirc 값이 단면인지 둘레인지: 50 이하면 단면으로 판단
       const clothCirc = waistCloth < 50 ? waistCloth * 2 : waistCloth;
       const ease = clothCirc - body.waistCirc;
       results.push({ part: 'waist', bodyValue: body.waistCirc, clothValue: clothCirc, ease, level: judgeLevel(ease, 'waist') });
+    } else if (clothing.has('hemWidth')) {
+      // 밑단폭 × 2로 허리 대용
+      const clothCirc = clothing.get('hemWidth')! * 2;
+      const ease = clothCirc - body.waistCirc;
+      results.push({ part: 'waist', bodyValue: body.waistCirc, clothValue: clothCirc, ease, level: judgeLevel(ease, 'waist') });
     }
+  }
+
+  // 총기장 — 참고 표시 (판정 없이 수치만)
+  if (clothing.has('totalLength')) {
+    const clothVal = clothing.get('totalLength')!;
+    results.push({ part: 'length', bodyValue: 0, clothValue: clothVal, ease: 0, level: 'good' });
+  }
+
+  // 소매 길이
+  if (clothing.has('sleeveLength')) {
+    const clothVal = clothing.get('sleeveLength')!;
+    results.push({ part: 'sleeve', bodyValue: 0, clothValue: clothVal, ease: 0, level: 'good' });
   }
 
   return results;

@@ -152,6 +152,8 @@ const en: TranslationDict = {
   'fit.part.waist': 'Waist',
   'fit.part.hip': 'Hip',
   'fit.part.thigh': 'Thigh',
+  'fit.part.length': 'Length',
+  'fit.part.sleeve': 'Sleeve',
   'fit.level.tight': 'Tight',
   'fit.level.good': 'Good',
   'fit.level.loose': 'Loose',

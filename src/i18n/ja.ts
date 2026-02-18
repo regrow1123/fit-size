@@ -152,6 +152,8 @@ const ja: TranslationDict = {
   'fit.part.waist': 'ウエスト',
   'fit.part.hip': 'ヒップ',
   'fit.part.thigh': '太もも',
+  'fit.part.length': '着丈',
+  'fit.part.sleeve': '袖丈',
   'fit.level.tight': 'タイト',
   'fit.level.good': 'ちょうど良い',
   'fit.level.loose': 'ルーズ',

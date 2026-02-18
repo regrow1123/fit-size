@@ -41,11 +41,12 @@ const LEVEL_STYLE: Record<FitLevel, { color: string; bg: string; border: string;
 
 // 부위별 라벨 위치 (SVG viewBox 기준 비율)
 const LABEL_POSITIONS: Record<string, { x: number; y: number; side: 'left' | 'right' }> = {
-  shoulder: { x: 0.82, y: 0.16, side: 'right' },
-  chest:    { x: 0.15, y: 0.28, side: 'left' },
-  waist:    { x: 0.82, y: 0.40, side: 'right' },
-  hip:      { x: 0.15, y: 0.46, side: 'left' },
-  sleeve:   { x: 0.12, y: 0.22, side: 'left' },
+  shoulder: { x: 0.85, y: 0.16, side: 'right' },
+  chest:    { x: 0.12, y: 0.28, side: 'left' },
+  waist:    { x: 0.85, y: 0.42, side: 'right' },
+  hip:      { x: 0.12, y: 0.48, side: 'left' },
+  length:   { x: 0.85, y: 0.55, side: 'right' },
+  sleeve:   { x: 0.10, y: 0.20, side: 'left' },
 };
 
 function FitLabel({ result, x, y, side, t }: {
@@ -73,7 +74,11 @@ function FitLabel({ result, x, y, side, t }: {
         )}
         <div className="flex flex-col">
           <span className="font-semibold text-gray-700 text-[11px]">{t(`fit.part.${result.part}`)}</span>
-          <span className={`font-bold ${style.color} text-[11px]`}>{easeStr}cm {style.emoji}</span>
+          {result.bodyValue > 0 ? (
+            <span className={`font-bold ${style.color} text-[11px]`}>{easeStr}cm {style.emoji}</span>
+          ) : (
+            <span className="text-gray-500 text-[11px]">{result.clothValue}cm</span>
+          )}
         </div>
         {side === 'left' && (
           <span className={`text-[10px] ${style.color}`}>▶</span>
@@ -125,10 +130,11 @@ export default function FittingResult({ body, clothingMeasurements, category }: 
     [fullBody, clothingMeasurements, category],
   );
 
-  // 전체 판정
-  const hasTight = fitResults.some(r => r.level === 'tight');
-  const hasLoose = fitResults.some(r => r.level === 'loose');
-  const overallLevel: FitLevel = hasTight ? 'tight' : hasLoose ? 'loose' : 'good';
+  // 전체 판정 (측정 비교가 있는 부위만)
+  const measuredResults = fitResults.filter(r => r.bodyValue > 0);
+  const hasTight = measuredResults.some(r => r.level === 'tight');
+  const hasLoose = measuredResults.some(r => r.level === 'loose');
+  const overallLevel: FitLevel = measuredResults.length === 0 ? 'good' : hasTight ? 'tight' : hasLoose ? 'loose' : 'good';
   const overallStyle = LEVEL_STYLE[overallLevel];
 
   return (

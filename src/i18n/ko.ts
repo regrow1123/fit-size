@@ -152,6 +152,8 @@ const ko: TranslationDict = {
   'fit.part.waist': '허리',
   'fit.part.hip': '엉덩이',
   'fit.part.thigh': '허벅지',
+  'fit.part.length': '총기장',
+  'fit.part.sleeve': '소매',
   'fit.level.tight': '타이트',
   'fit.level.good': '적당',
   'fit.level.loose': '루즈',
