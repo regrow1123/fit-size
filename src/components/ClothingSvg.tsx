@@ -10,9 +10,7 @@ interface Props {
   clothingCm: Map<string, number>;
   body: BodyMeasurements;
   canvasWidth: number;
-  canvasHeight: number;
-  displayWidth: number;
-  displayHeight: number;
+  canvasHeight?: number;
 }
 
 const REGION_LABELS: Record<string, string> = {
@@ -38,9 +36,6 @@ export default function ClothingSvg({
   clothingCm,
   body,
   canvasWidth,
-  canvasHeight,
-  displayWidth,
-  displayHeight,
 }: Props) {
   const fitResult: FitResult = useMemo(
     () => analyzeFit(clothingCm, body),
@@ -64,17 +59,7 @@ export default function ClothingSvg({
   );
 
   return (
-    <svg
-      viewBox={`0 0 ${canvasWidth} ${canvasHeight}`}
-      style={{
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        width: displayWidth,
-        height: displayHeight,
-        pointerEvents: 'none',
-      }}
-    >
+    <g>
       {regions.map(region => {
         const fitKey = getRegionFitKey(region.id);
         const regionFit = fitResult.regions[fitKey];
@@ -109,6 +94,6 @@ export default function ClothingSvg({
           strokeDasharray="3 4"
         />
       ))}
-    </svg>
+    </g>
   );
 }

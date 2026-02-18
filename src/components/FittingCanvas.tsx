@@ -1,9 +1,9 @@
 import { useRef, useEffect, useState, useCallback, useMemo } from 'react';
 import type { BodyMeasurements, AvatarDimensions, ClothingDimensions, ClothingCategory } from '../types';
 import { calculateAvatarDimensions } from '../utils/avatarCalculator';
-import { drawAvatar } from '../utils/avatarRenderer';
 import { calculateClothingDimensions } from '../utils/clothingRenderer';
 import { useTranslation } from '../i18n';
+import AvatarSvg from './AvatarSvg';
 import ClothingSvg from './ClothingSvg';
 
 interface Props {
@@ -18,7 +18,6 @@ const ASPECT = BASE_HEIGHT / BASE_WIDTH;
 
 export default function FittingCanvas({ body, clothingMeasurements, category = 'tshirt' }: Props) {
   const { t } = useTranslation();
-  const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState({ w: BASE_WIDTH, h: BASE_HEIGHT });
 
@@ -49,25 +48,17 @@ export default function FittingCanvas({ body, clothingMeasurements, category = '
     [clothingMeasurements, body.height, category],
   );
 
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    canvas.width = BASE_WIDTH;
-    canvas.height = BASE_HEIGHT;
-
-    drawAvatar(ctx, avatarDims, BASE_WIDTH, BASE_HEIGHT);
-  }, [avatarDims, size]);
-
   return (
     <div ref={containerRef} className="w-full flex flex-col items-center">
-      <div style={{ position: 'relative', width: size.w, height: size.h }}>
-        <canvas
-          ref={canvasRef}
-          style={{ width: size.w, height: size.h }}
-          className="border rounded-lg bg-white shadow-inner"
+      <svg
+        viewBox={`0 0 ${BASE_WIDTH} ${BASE_HEIGHT}`}
+        style={{ width: size.w, height: size.h }}
+        className="border rounded-lg bg-white shadow-inner"
+      >
+        <AvatarSvg
+          avatarDims={avatarDims}
+          canvasWidth={BASE_WIDTH}
+          canvasHeight={BASE_HEIGHT}
         />
         {clothingDims && clothingMeasurements && (
           <ClothingSvg
@@ -77,11 +68,9 @@ export default function FittingCanvas({ body, clothingMeasurements, category = '
             body={body}
             canvasWidth={BASE_WIDTH}
             canvasHeight={BASE_HEIGHT}
-            displayWidth={size.w}
-            displayHeight={size.h}
           />
         )}
-      </div>
+      </svg>
       <div className="mt-2 flex gap-4 text-xs text-gray-500">
         <span className="flex items-center gap-1">
           <span className="w-3 h-3 rounded bg-green-500 inline-block" /> {t('fit.good')}
