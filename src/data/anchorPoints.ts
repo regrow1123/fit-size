@@ -1,4 +1,7 @@
 import type { ClothingCategory } from '../types';
+import { tshirtTemplate } from '../clothing/templates/tshirt';
+import { calculateAvatarDimensions } from '../utils/avatarCalculator';
+import { calculateClothingDimensions } from '../utils/clothingRenderer';
 
 export interface AnchorPoint {
   id: string;
@@ -41,36 +44,39 @@ const TSHIRT_POINTS: AnchorPoint[] = [
 ];
 
 function drawTshirtOutline(ctx: CanvasRenderingContext2D, w: number, h: number) {
+  // tshirt.ts buildBody의 SVG path를 Canvas에 그리기
+  // 기준: 400x700 viewBox → canvas w×h 스케일
+  // 고정 175cm/70kg 남성 기본 치수로 path 생성
+  const fixedBody = { height: 175, weight: 70, gender: 'male' as const };
+  const fixedClothing = new Map<string, number>([
+    ['shoulderWidth', 48], ['chestWidth', 50], ['totalLength', 70],
+    ['sleeveLength', 25], ['hemWidth', 50], ['sleeveCirc', 42],
+  ]);
+
+  const av = calculateAvatarDimensions(fixedBody);
+  const cl = calculateClothingDimensions(fixedClothing, fixedBody.height, 'tshirt');
+  const pathD = tshirtTemplate.buildBody(av, cl, 200); // cx=200 (400/2)
+
   ctx.save();
+  // 스케일: 400→w, 700→h
+  ctx.scale(w / 400, h / 700);
+
+  const path = new Path2D(pathD);
+  ctx.fillStyle = '#F0F4F8';
+  ctx.fill(path);
   ctx.strokeStyle = '#CBD5E1';
-  ctx.lineWidth = 2;
-  ctx.fillStyle = '#F8FAFC';
-  ctx.beginPath();
-  ctx.moveTo(w * 0.42, h * 0.09);
-  ctx.quadraticCurveTo(w * 0.5, h * 0.14, w * 0.58, h * 0.09);
-  ctx.lineTo(w * 0.8, h * 0.14);
-  ctx.lineTo(w * 0.92, h * 0.32);
-  ctx.lineTo(w * 0.76, h * 0.28);
-  ctx.lineTo(w * 0.76, h * 0.35);
-  ctx.lineTo(w * 0.75, h * 0.58);
-  ctx.lineTo(w * 0.74, h * 0.78);
-  ctx.lineTo(w * 0.26, h * 0.78);
-  ctx.lineTo(w * 0.25, h * 0.58);
-  ctx.lineTo(w * 0.24, h * 0.35);
-  ctx.lineTo(w * 0.24, h * 0.28);
-  ctx.lineTo(w * 0.08, h * 0.32);
-  ctx.lineTo(w * 0.2, h * 0.14);
-  ctx.lineTo(w * 0.42, h * 0.09);
-  ctx.closePath();
-  ctx.fill();
-  ctx.stroke();
+  ctx.lineWidth = 2 * (400 / w); // 선 두께 보정
+  ctx.stroke(path);
+
+  // 중심선
   ctx.setLineDash([4, 4]);
   ctx.strokeStyle = '#E2E8F0';
   ctx.beginPath();
-  ctx.moveTo(w * 0.5, h * 0.08);
-  ctx.lineTo(w * 0.5, h * 0.78);
+  ctx.moveTo(200, 80);
+  ctx.lineTo(200, 500);
   ctx.stroke();
   ctx.setLineDash([]);
+
   ctx.restore();
 }
 
