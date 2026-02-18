@@ -2,7 +2,7 @@ import type { TranslationDict } from './types';
 
 const en: TranslationDict = {
   // App
-  'app.subtitle': 'Never get the wrong size again ✨',
+  'app.subtitle': 'Your online fitting room 🪞',
   'app.step.body': 'Body Setup',
   'app.step.bodyDesc': 'Height & weight',
   'app.step.clothing': 'Clothing',
