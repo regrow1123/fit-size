@@ -31,8 +31,8 @@ const LEVEL_STYLE: Record<FitLevel, { color: string; bg: string; border: string;
 
 // 전체 캔버스(SVG+라벨 패딩)에서의 라벨/화살표 설정
 // viewBox를 넓혀서 양옆에 라벨 공간 확보
-const PADDED_W = 580; // SVG_W(400) + 좌90 + 우90
-const PAD_LEFT = 90;
+const PADDED_W = 550; // SVG_W(400) + 좌75 + 우75
+const PAD_LEFT = 75;
 // 아바타 부위별 타겟 좌표 (원래 400x700 viewBox 기준 → padded 기준으로 오프셋)
 // side: 라벨이 어느 쪽에 위치하는지
 interface PartTarget {
