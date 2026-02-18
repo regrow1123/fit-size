@@ -31,8 +31,8 @@ const LEVEL_STYLE: Record<FitLevel, { color: string; bg: string; border: string;
 
 // 전체 캔버스(SVG+라벨 패딩)에서의 라벨/화살표 설정
 // viewBox를 넓혀서 양옆에 라벨 공간 확보
-const PADDED_W = 520; // SVG_W(400) + 좌60 + 우60
-const PAD_LEFT = 60;
+const PADDED_W = 540; // SVG_W(400) + 좌70 + 우70
+const PAD_LEFT = 70;
 // 아바타 부위별 타겟 좌표 (원래 400x700 viewBox 기준 → padded 기준으로 오프셋)
 // side: 라벨이 어느 쪽에 위치하는지
 interface PartTarget {
@@ -149,11 +149,11 @@ export default function FittingResult({ body, clothingMeasurements, category }: 
 
                 {/* 라벨 텍스트 */}
                 <text x={lx + LABEL_W / 2} y={ly + 20} textAnchor="middle"
-                  fontSize={16} fontWeight={600} fill="#374151">
+                  fontSize={18} fontWeight={600} fill="#374151">
                   {t(`fit.part.${r.part}`)}
                 </text>
-                <text x={lx + LABEL_W / 2} y={ly + 40} textAnchor="middle"
-                  fontSize={15} fontWeight={700}
+                <text x={lx + LABEL_W / 2} y={ly + 42} textAnchor="middle"
+                  fontSize={17} fontWeight={700}
                   fill={r.level === 'tight' ? '#dc2626' : r.level === 'loose' ? '#ca8a04' : '#16a34a'}>
                   {r.bodyValue > 0 ? `${easeStr}cm` : `${r.clothValue}cm`}
                 </text>
