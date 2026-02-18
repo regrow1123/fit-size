@@ -16,49 +16,45 @@ interface Props {
 
 const BASE_WIDTH = 400;
 const BASE_HEIGHT = 700;
-const ASPECT = BASE_HEIGHT / BASE_WIDTH;
 
-// 고정 체형/옷
-const FIXED_BODY: BodyMeasurements = {
-  height: 175,
-  weight: 70,
-  gender: 'male' as const,
-};
+const FIXED_BODY: BodyMeasurements = { height: 175, weight: 70, gender: 'male' as const };
 const FIXED_CLOTHING = new Map<string, number>([
-  ['shoulderWidth', 48],
-  ['chestWidth', 50],
-  ['totalLength', 70],
-  ['sleeveLength', 25],
-  ['hemWidth', 50],
-  ['sleeveCirc', 42],
+  ['shoulderWidth', 48], ['chestWidth', 50], ['totalLength', 70],
+  ['sleeveLength', 25], ['hemWidth', 50], ['sleeveCirc', 42],
 ]);
 
-const LEVEL_STYLE: Record<FitLevel, { color: string; bg: string; border: string; emoji: string }> = {
-  tight: { color: 'text-red-600', bg: 'bg-red-50', border: 'border-red-200', emoji: '🔴' },
-  good:  { color: 'text-green-600', bg: 'bg-green-50', border: 'border-green-200', emoji: '🟢' },
-  loose: { color: 'text-yellow-600', bg: 'bg-yellow-50', border: 'border-yellow-200', emoji: '🟡' },
+const LEVEL_STYLE: Record<FitLevel, { color: string; bg: string; border: string; emoji: string; line: string }> = {
+  tight: { color: 'text-red-600', bg: 'bg-red-50', border: 'border-red-200', emoji: '🔴', line: 'bg-red-300' },
+  good:  { color: 'text-green-600', bg: 'bg-green-50', border: 'border-green-200', emoji: '🟢', line: 'bg-green-300' },
+  loose: { color: 'text-yellow-600', bg: 'bg-yellow-50', border: 'border-yellow-200', emoji: '🟡', line: 'bg-yellow-300' },
 };
 
-// (라벨 오버레이 제거 — 모바일에서 잘림 문제로 리스트 방식으로 전환)
+// 부위별 Y 위치 (아바타 높이 비율) 및 좌우 배치
+const PART_CONFIG: Record<string, { yRatio: number; side: 'left' | 'right' }> = {
+  shoulder: { yRatio: 0.15, side: 'right' },
+  chest:    { yRatio: 0.27, side: 'left' },
+  waist:    { yRatio: 0.40, side: 'right' },
+  length:   { yRatio: 0.53, side: 'left' },
+  sleeve:   { yRatio: 0.22, side: 'right' },
+};
 
 export default function FittingResult({ body, clothingMeasurements, category }: Props) {
   const { t } = useTranslation();
   const containerRef = useRef<HTMLDivElement>(null);
-  const [size, setSize] = useState({ w: BASE_WIDTH, h: BASE_HEIGHT });
+  const [avatarH, setAvatarH] = useState(500);
 
-  const measure = useCallback(() => {
+  const measureAvatar = useCallback(() => {
     if (!containerRef.current) return;
-    const maxW = Math.min(containerRef.current.clientWidth, BASE_WIDTH);
-    const w = Math.max(280, maxW);
-    setSize({ w, h: Math.round(w * ASPECT) });
+    const svg = containerRef.current.querySelector('svg');
+    if (svg) setAvatarH(svg.clientHeight);
   }, []);
 
   useEffect(() => {
-    measure();
-    const ro = new ResizeObserver(measure);
+    measureAvatar();
+    const ro = new ResizeObserver(measureAvatar);
     if (containerRef.current) ro.observe(containerRef.current);
     return () => ro.disconnect();
-  }, [measure]);
+  }, [measureAvatar]);
 
   const avatarDims = useMemo(() => calculateAvatarDimensions(FIXED_BODY), []);
   const clothingDims = useMemo(
@@ -66,7 +62,6 @@ export default function FittingResult({ body, clothingMeasurements, category }: 
     [category],
   );
 
-  // body에 둘레값이 없으면 추정값으로 채움
   const fullBody = useMemo(() => {
     const stats = estimateBodyDimensions(body.gender, body.height, body.weight, body.shoulderWidth, body.chestCirc, body.waistCirc, body.hipCirc);
     return {
@@ -83,12 +78,14 @@ export default function FittingResult({ body, clothingMeasurements, category }: 
     [fullBody, clothingMeasurements, category],
   );
 
-  // 전체 판정 (측정 비교가 있는 부위만)
   const measuredResults = fitResults.filter(r => r.bodyValue > 0);
   const hasTight = measuredResults.some(r => r.level === 'tight');
   const hasLoose = measuredResults.some(r => r.level === 'loose');
   const overallLevel: FitLevel = measuredResults.length === 0 ? 'good' : hasTight ? 'tight' : hasLoose ? 'loose' : 'good';
   const overallStyle = LEVEL_STYLE[overallLevel];
+
+  const leftLabels = fitResults.filter(r => PART_CONFIG[r.part]?.side === 'left');
+  const rightLabels = fitResults.filter(r => PART_CONFIG[r.part]?.side === 'right');
 
   return (
     <div className="flex flex-col items-center w-full">
@@ -100,54 +97,80 @@ export default function FittingResult({ body, clothingMeasurements, category }: 
         </div>
       </div>
 
-      {/* 아바타 + 라벨 */}
-      <div ref={containerRef} className="relative w-full max-w-[400px]">
-        <svg
-          viewBox={`0 0 ${BASE_WIDTH} ${BASE_HEIGHT}`}
-          style={{ width: size.w, height: size.h }}
-          className="border rounded-lg bg-white shadow-inner"
-        >
-          <AvatarSvg
-            avatarDims={avatarDims}
-            canvasWidth={BASE_WIDTH}
-            canvasHeight={BASE_HEIGHT}
-          />
-          {clothingDims && (
-            <ClothingSvg
-              avatarDims={avatarDims}
-              clothingDims={clothingDims}
-              clothingCm={clothingMeasurements}
-              body={FIXED_BODY}
-              canvasWidth={BASE_WIDTH}
-              canvasHeight={BASE_HEIGHT}
-            />
-          )}
-        </svg>
-
-      </div>
-
-      {/* 부위별 핏 결과 리스트 */}
-      <div className="w-full max-w-[400px] mt-4 space-y-2">
-        {fitResults.map(r => {
-          const style = LEVEL_STYLE[r.level];
-          const easeStr = r.ease >= 0 ? `+${r.ease.toFixed(1)}` : r.ease.toFixed(1);
-          return (
-            <div key={r.part} className={`flex items-center justify-between rounded-lg px-4 py-3 border ${style.bg} ${style.border}`}>
-              <div className="flex items-center gap-2">
-                <span className="text-base">{style.emoji}</span>
-                <span className="font-semibold text-gray-700 text-sm">{t(`fit.part.${r.part}`)}</span>
-              </div>
-              {r.bodyValue > 0 ? (
-                <div className="flex items-center gap-3 text-sm">
-                  <span className="text-gray-400">{r.bodyValue}cm → {r.clothValue}cm</span>
-                  <span className={`font-bold ${style.color}`}>{easeStr}cm</span>
+      {/* 3컬럼: 왼쪽 라벨 | 아바타 | 오른쪽 라벨 */}
+      <div className="w-full bg-white rounded-xl border shadow-sm p-2 sm:p-4">
+        <div className="flex items-stretch">
+          {/* 왼쪽 라벨 */}
+          <div className="flex-1 flex flex-col justify-start relative min-w-0" style={{ minHeight: avatarH }}>
+            {leftLabels.map(r => {
+              const cfg = PART_CONFIG[r.part];
+              if (!cfg) return null;
+              const style = LEVEL_STYLE[r.level];
+              const easeStr = r.ease >= 0 ? `+${r.ease.toFixed(1)}` : r.ease.toFixed(1);
+              return (
+                <div
+                  key={r.part}
+                  className="absolute right-0 flex items-center gap-1"
+                  style={{ top: `${cfg.yRatio * 100}%` }}
+                >
+                  <div className={`px-2 py-1 rounded-lg border text-right ${style.bg} ${style.border}`}>
+                    <div className="font-semibold text-gray-700 text-[11px] sm:text-xs">{t(`fit.part.${r.part}`)}</div>
+                    {r.bodyValue > 0 ? (
+                      <div className={`font-bold ${style.color} text-[11px] sm:text-xs`}>{easeStr}cm</div>
+                    ) : (
+                      <div className="text-gray-500 text-[11px] sm:text-xs">{r.clothValue}cm</div>
+                    )}
+                  </div>
+                  <div className={`w-3 sm:w-5 h-[2px] ${style.line}`} />
                 </div>
-              ) : (
-                <span className="text-gray-500 text-sm">{r.clothValue}cm</span>
+              );
+            })}
+          </div>
+
+          {/* 아바타 */}
+          <div ref={containerRef} className="flex-shrink-0" style={{ width: '45%', maxWidth: 220 }}>
+            <svg
+              viewBox={`0 0 ${BASE_WIDTH} ${BASE_HEIGHT}`}
+              className="w-full h-auto"
+            >
+              <AvatarSvg avatarDims={avatarDims} canvasWidth={BASE_WIDTH} canvasHeight={BASE_HEIGHT} />
+              {clothingDims && (
+                <ClothingSvg
+                  avatarDims={avatarDims} clothingDims={clothingDims}
+                  clothingCm={clothingMeasurements} body={FIXED_BODY}
+                  canvasWidth={BASE_WIDTH} canvasHeight={BASE_HEIGHT}
+                />
               )}
-            </div>
-          );
-        })}
+            </svg>
+          </div>
+
+          {/* 오른쪽 라벨 */}
+          <div className="flex-1 flex flex-col justify-start relative min-w-0" style={{ minHeight: avatarH }}>
+            {rightLabels.map(r => {
+              const cfg = PART_CONFIG[r.part];
+              if (!cfg) return null;
+              const style = LEVEL_STYLE[r.level];
+              const easeStr = r.ease >= 0 ? `+${r.ease.toFixed(1)}` : r.ease.toFixed(1);
+              return (
+                <div
+                  key={r.part}
+                  className="absolute left-0 flex items-center gap-1"
+                  style={{ top: `${cfg.yRatio * 100}%` }}
+                >
+                  <div className={`w-3 sm:w-5 h-[2px] ${style.line}`} />
+                  <div className={`px-2 py-1 rounded-lg border text-left ${style.bg} ${style.border}`}>
+                    <div className="font-semibold text-gray-700 text-[11px] sm:text-xs">{t(`fit.part.${r.part}`)}</div>
+                    {r.bodyValue > 0 ? (
+                      <div className={`font-bold ${style.color} text-[11px] sm:text-xs`}>{easeStr}cm</div>
+                    ) : (
+                      <div className="text-gray-500 text-[11px] sm:text-xs">{r.clothValue}cm</div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
       </div>
 
       {/* 범례 */}
