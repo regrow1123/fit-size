@@ -47,27 +47,20 @@ function halfWidthAt(y: number, dims: AvatarDimensions): number {
   return pts[0][1];
 }
 
-const ARM_ANGLE = 15 * Math.PI / 180;
-
 /**
- * 메시 정점을 체형 차이에 따라 워핑.
- * isTshirt=true이면 소매 영역 정점을 T-포즈 → 15도로 회전.
+ * 메시 정점을 체형 차이에 따라 수평 워핑.
+ * 소매는 이미 15도가 이미지에 반영돼있으므로 회전 불필요.
  */
 function warpMesh(
   mesh: PIXI.SimplePlane,
   baseDims: AvatarDimensions,
   targetDims: AvatarDimensions,
   widthExtra: number = 1,
-  isTshirt: boolean = false,
 ) {
   const buf = mesh.geometry.buffers[0];
   const verts = buf.data as unknown as Float32Array;
   const cols = GRID_X + 1;
   const cx = W / 2;
-
-  const shX = targetDims.shoulderWidth / 2; // 어깨 반폭
-  const shoulderY = targetDims.shoulderY;
-  const chestY = targetDims.chestY;
 
   for (let j = 0; j <= GRID_Y; j++) {
     const origY = (j / GRID_Y) * H;
@@ -79,42 +72,11 @@ function warpMesh(
       const idx = (j * cols + i) * 2;
       const origX = (i / GRID_X) * W;
       const dx = origX - cx;
-
-      const origDx = Math.abs(origX - cx);
-      const baseShX = baseDims.shoulderWidth / 2;
-      const isSleeve = isTshirt && origDx > baseShX * 0.7 && origY < chestY + 30;
-
-      // 소매 영역은 수평 스케일 적용 안 함 (회전만)
-      let newX = cx + dx * (isSleeve ? 1 : ratio);
-      let newY = origY;
-
-      // 소매: T-포즈 → 15도로 회전
-      if (isSleeve) {
-        const side = origX > cx ? 1 : -1;
-        const pivotX = cx + side * shX;
-        const pivotY = shoulderY;
-        const relX = newX - pivotX;
-        const relY = newY - pivotY;
-
-        const angle = side * ARM_ANGLE;
-        const cos = Math.cos(angle);
-        const sin = Math.sin(angle);
-        newX = pivotX + relX * cos - relY * sin;
-        newY = pivotY + relX * sin + relY * cos;
-      }
-
-      verts[idx] = newX;
-      verts[idx + 1] = newY;
+      verts[idx] = cx + dx * ratio;
+      verts[idx + 1] = origY;
     }
   }
   buf.update();
-  if (isTshirt) {
-    // 디버그: 소매 끝 정점 위치 확인
-    const lastRowTop = 6; // shoulderY 근처 row
-    const rightEnd = GRID_X; // 가장 오른쪽 열
-    const dbgIdx = (lastRowTop * (GRID_X + 1) + rightEnd) * 2;
-    console.log(`[warp] tshirt sleeve end vertex: (${verts[dbgIdx].toFixed(1)}, ${verts[dbgIdx+1].toFixed(1)})`);
-  }
 }
 
 export default function FittingPixi({ body, clothingMeasurements, category = 'tshirt' }: Props) {
@@ -179,12 +141,12 @@ export default function FittingPixi({ body, clothingMeasurements, category = 'ts
   useEffect(() => {
     if (!mannequinRef.current) return;
 
-    warpMesh(mannequinRef.current, baseDims, avatarDims, 1, false);
+    warpMesh(mannequinRef.current, baseDims, avatarDims, 1);
 
     if (tshirtRef.current) {
       if (clothingDims) {
         const scale = Math.max(1, clothingDims.chestWidth / avatarDims.chestWidth);
-        warpMesh(tshirtRef.current, baseDims, avatarDims, scale, true);
+        warpMesh(tshirtRef.current, baseDims, avatarDims, scale);
         tshirtRef.current.visible = true;
       } else {
         tshirtRef.current.visible = false;
