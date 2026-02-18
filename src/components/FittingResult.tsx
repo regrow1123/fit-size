@@ -90,7 +90,7 @@ export default function FittingResult({ body, clothingMeasurements, category }: 
   // 라벨 크기 (viewBox 단위)
   const LABEL_W = 85;
   const LABEL_H = 52;
-  const LABEL_PAD = 0;
+  // LABEL_PAD removed — labels placed adjacent to avatar
 
   return (
     <div className="flex flex-col items-center w-full">
