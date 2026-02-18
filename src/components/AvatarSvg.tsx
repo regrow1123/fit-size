@@ -150,7 +150,7 @@ export default function AvatarSvg({ avatarDims: d, canvasWidth }: Props) {
     const knH = d.kneeWidth / 2;
     const caH = d.calfWidth / 2;
     const anH = d.ankleWidth / 2;
-    const footEnd = d.ankleY + 14;
+    const footEnd = d.ankleY + 20; // 발 길이 키움
 
     // 정면 다리: 바깥쪽(+s)은 완만, 안쪽(-s)은 종아리 볼록
     let p = `M ${legCX + s * thH} ${d.crotchY}`;
@@ -160,10 +160,11 @@ export default function AvatarSvg({ avatarDims: d, canvasWidth }: Props) {
     p += ` C ${legCX + s * caH * 1.05} ${d.kneeY + (d.calfY - d.kneeY) * 0.4}, ${legCX + s * caH * 1.0} ${d.calfY - (d.calfY - d.kneeY) * 0.1}, ${legCX + s * caH * 0.85} ${d.calfY}`;
     // 바깥쪽: 종아리→발목
     p += ` C ${legCX + s * caH * 0.6} ${d.calfY + (d.ankleY - d.calfY) * 0.4}, ${legCX + s * anH * 1.1} ${d.ankleY - (d.ankleY - d.calfY) * 0.2}, ${legCX + s * anH} ${d.ankleY}`;
-    // 발 (바깥쪽으로)
-    p += ` Q ${legCX + s * anH * 0.8} ${d.ankleY + 6}, ${legCX + s * d.footLength} ${footEnd}`;
-    p += ` Q ${legCX + s * d.footLength * 0.3} ${footEnd + 3}, ${legCX - s * anH * 0.2} ${footEnd - 2}`;
-    p += ` Q ${legCX - s * anH * 0.6} ${d.ankleY + 4}, ${legCX - s * anH} ${d.ankleY}`;
+    // 발 (정면: 넓고 둥글게)
+    const footW = d.footLength * 1.4; // 발 너비
+    p += ` C ${legCX + s * anH} ${d.ankleY + 8}, ${legCX + s * footW} ${footEnd - 6}, ${legCX + s * footW} ${footEnd}`;
+    p += ` C ${legCX + s * footW} ${footEnd + 5}, ${legCX - s * anH * 0.3} ${footEnd + 5}, ${legCX - s * anH * 0.3} ${footEnd}`;
+    p += ` C ${legCX - s * anH * 0.3} ${footEnd - 4}, ${legCX - s * anH} ${d.ankleY + 6}, ${legCX - s * anH} ${d.ankleY}`;
     // 안쪽: 발목→종아리 (종아리 내측 볼록 — 정면 특징)
     p += ` C ${legCX - s * anH * 1.0} ${d.ankleY - (d.ankleY - d.calfY) * 0.2}, ${legCX - s * caH * 0.85} ${d.calfY + (d.ankleY - d.calfY) * 0.3}, ${legCX - s * caH * 0.75} ${d.calfY}`;
     // 안쪽: 종아리→무릎 (내측 볼록)
