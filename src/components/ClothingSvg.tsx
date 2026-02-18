@@ -70,32 +70,22 @@ export default function ClothingSvg({
       <defs>
         <clipPath id="clothing-clip">
           <path d={bodyPath} />
-          <path d={leftSleeve.path} transform={leftSleeve.transform} />
-          <path d={rightSleeve.path} transform={rightSleeve.transform} />
+          {leftSleeve.path && <path d={leftSleeve.path} transform={leftSleeve.transform} />}
+          {rightSleeve.path && <path d={rightSleeve.path} transform={rightSleeve.transform} />}
         </clipPath>
       </defs>
 
-      {/* Layer 1-2: Sleeves behind body */}
-      <g transform={leftSleeve.transform}>
-        <path
-          d={leftSleeve.path}
-          fill={SILHOUETTE_FILL}
-          stroke={SILHOUETTE_STROKE}
-          strokeWidth={1.5}
-          strokeLinejoin="round"
-          strokeLinecap="round"
-        />
-      </g>
-      <g transform={rightSleeve.transform}>
-        <path
-          d={rightSleeve.path}
-          fill={SILHOUETTE_FILL}
-          stroke={SILHOUETTE_STROKE}
-          strokeWidth={1.5}
-          strokeLinejoin="round"
-          strokeLinecap="round"
-        />
-      </g>
+      {/* Layer 1-2: Sleeves behind body (skip if integrated into body path) */}
+      {leftSleeve.path && (
+        <g transform={leftSleeve.transform}>
+          <path d={leftSleeve.path} fill={SILHOUETTE_FILL} stroke={SILHOUETTE_STROKE} strokeWidth={1.5} strokeLinejoin="round" strokeLinecap="round" />
+        </g>
+      )}
+      {rightSleeve.path && (
+        <g transform={rightSleeve.transform}>
+          <path d={rightSleeve.path} fill={SILHOUETTE_FILL} stroke={SILHOUETTE_STROKE} strokeWidth={1.5} strokeLinejoin="round" strokeLinecap="round" />
+        </g>
+      )}
 
       {/* Layer 3: Body in front */}
       <path

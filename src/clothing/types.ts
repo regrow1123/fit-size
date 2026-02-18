@@ -2,7 +2,7 @@ import type { AvatarDimensions, ClothingCategory, ClothingDimensions } from '../
 
 export interface SleeveResult {
   path: string;
-  transform: string;  // e.g. "rotate(15, 200, 120)"
+  transform?: string;  // e.g. "rotate(15, 200, 120)"
 }
 
 export interface ClothingOverlay {
