@@ -13,8 +13,8 @@ interface Props {
 
 const W = 400;
 const H = 700;
-const GRID_X = 10;
-const GRID_Y = 18;
+const GRID_X = 20;
+const GRID_Y = 30;
 
 /** 기준 체형 (175cm/70kg male) */
 function getBaseDims(): AvatarDimensions {
@@ -47,19 +47,27 @@ function halfWidthAt(y: number, dims: AvatarDimensions): number {
   return pts[0][1];
 }
 
+const ARM_ANGLE = 15 * Math.PI / 180;
+
 /**
- * 메시 정점을 체형 차이에 따라 워핑
+ * 메시 정점을 체형 차이에 따라 워핑.
+ * isTshirt=true이면 소매 영역 정점을 T-포즈 → 15도로 회전.
  */
 function warpMesh(
   mesh: PIXI.SimplePlane,
   baseDims: AvatarDimensions,
   targetDims: AvatarDimensions,
   widthExtra: number = 1,
+  isTshirt: boolean = false,
 ) {
   const buf = mesh.geometry.buffers[0];
   const verts = buf.data as unknown as Float32Array;
   const cols = GRID_X + 1;
   const cx = W / 2;
+
+  const shX = targetDims.shoulderWidth / 2; // 어깨 반폭
+  const shoulderY = targetDims.shoulderY;
+  const chestY = targetDims.chestY;
 
   for (let j = 0; j <= GRID_Y; j++) {
     const origY = (j / GRID_Y) * H;
@@ -71,9 +79,32 @@ function warpMesh(
       const idx = (j * cols + i) * 2;
       const origX = (i / GRID_X) * W;
       const dx = origX - cx;
-      verts[idx] = cx + dx * ratio;
-      // Y는 일단 그대로 (수직 워핑은 나중에 추가)
-      verts[idx + 1] = origY;
+
+      let newX = cx + dx * ratio;
+      let newY = origY;
+
+      // 티셔츠 소매 워핑: 어깨 바깥 영역 + 상체 영역
+      if (isTshirt && origY >= shoulderY - 40 && origY <= chestY + 20) {
+        const absDx = Math.abs(newX - cx);
+        if (absDx > shX * 0.8) {
+          // 어깨 밖 영역 — T-포즈에서 15도로 꺾기
+          const side = newX > cx ? 1 : -1;
+          const pivotX = cx + side * shX;
+          const pivotY = shoulderY;
+          const relX = newX - pivotX;
+          const relY = newY - pivotY;
+
+          // T-포즈에서 relX는 팔 방향(수평), relY는 수직
+          // 15도 회전 적용 (오른쪽: 시계방향, 왼쪽: 반시계)
+          const cos = Math.cos(side * ARM_ANGLE);
+          const sin = Math.sin(side * ARM_ANGLE);
+          newX = pivotX + relX * cos - relY * sin;
+          newY = pivotY + relX * sin + relY * cos;
+        }
+      }
+
+      verts[idx] = newX;
+      verts[idx + 1] = newY;
     }
   }
   buf.update();
@@ -141,12 +172,12 @@ export default function FittingPixi({ body, clothingMeasurements, category = 'ts
   useEffect(() => {
     if (!mannequinRef.current) return;
 
-    warpMesh(mannequinRef.current, baseDims, avatarDims, 1);
+    warpMesh(mannequinRef.current, baseDims, avatarDims, 1, false);
 
     if (tshirtRef.current) {
       if (clothingDims) {
         const scale = Math.max(1, clothingDims.chestWidth / avatarDims.chestWidth);
-        warpMesh(tshirtRef.current, baseDims, avatarDims, scale);
+        warpMesh(tshirtRef.current, baseDims, avatarDims, scale, true);
         tshirtRef.current.visible = true;
       } else {
         tshirtRef.current.visible = false;
