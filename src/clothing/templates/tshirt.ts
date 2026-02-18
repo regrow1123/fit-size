@@ -12,8 +12,8 @@ const cosA = Math.cos(SLEEVE_ANGLE);
  * 경로: 목 → 오른쪽 어깨 → 오른쪽 소매 외측 → 소매 끝 → 소매 내측 → 오른쪽 몸통 → 밑단 → 왼쪽 몸통 → 왼쪽 소매 → 목
  */
 function buildBody(av: AvatarDimensions, cl: ClothingDimensions, cx: number): string {
-  const sy = av.shoulderY;
-  const nkH = av.neckWidth / 2;
+  const sy = av.shoulderY - 15; // 옷을 위로 올림
+  const nkH = av.neckWidth / 2 * 1.3; // 목 구멍 넓게
 
   // 옷 치수 (아바타보다 넓게 보장)
   const shH = Math.max(cl.shoulderWidth / 2, av.shoulderWidth / 2 * 1.15);
@@ -61,7 +61,7 @@ function buildBody(av: AvatarDimensions, cl: ClothingDimensions, cx: number): st
   const d: string[] = [];
 
   // === 네크라인 (둥글게 U자) ===
-  const neckDip = 14; // 목 파임 깊이
+  const neckDip = 22; // 목 파임 깊이 (크게)
   d.push(`M ${cx - nkH} ${sy}`);
   d.push(`C ${cx - nkH * 0.5} ${sy + neckDip}, ${cx + nkH * 0.5} ${sy + neckDip}, ${cx + nkH} ${sy}`);
 
@@ -127,9 +127,10 @@ function buildSleeve(_av: AvatarDimensions, _cl: ClothingDimensions, _cx: number
 
 function buildSeams(av: AvatarDimensions, cl: ClothingDimensions, cx: number): string[] {
   const shH = Math.max(cl.shoulderWidth / 2, av.shoulderWidth / 2 * 1.15);
-  const nkH = av.neckWidth / 2;
-  const sy = av.shoulderY;
-  return [1, -1].map(s => `M ${cx + s * nkH} ${sy - 2} L ${cx + s * shH} ${sy}`);
+  const nkH = av.neckWidth / 2 * 1.3;
+  const sy = av.shoulderY - 15;
+  const shY = sy + 5;
+  return [1, -1].map(s => `M ${cx + s * nkH} ${sy} L ${cx + s * shH} ${shY}`);
 }
 
 export const tshirtTemplate: ClothingTemplate = {
