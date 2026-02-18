@@ -172,7 +172,6 @@ export default function AvatarSvg({ avatarDims: d, canvasWidth }: Props) {
   const toePaths: string[] = [];
   for (const s of [-1, 1]) {
     const legCX = cx + s * hiH * 0.42;
-    const anH = d.ankleWidth / 2;
     const footEnd = d.ankleY + 14;
     const footLen = d.footLength;
     const toeStartX = legCX + s * footLen;
