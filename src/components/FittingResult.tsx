@@ -31,8 +31,8 @@ const LEVEL_STYLE: Record<FitLevel, { color: string; bg: string; border: string;
 
 // 전체 캔버스(SVG+라벨 패딩)에서의 라벨/화살표 설정
 // viewBox를 넓혀서 양옆에 라벨 공간 확보
-const PADDED_W = 700; // SVG_W(400) + 좌150 + 우150
-const PAD_LEFT = 150;
+const PADDED_W = 560; // SVG_W(400) + 좌80 + 우80
+const PAD_LEFT = 80;
 // 아바타 부위별 타겟 좌표 (원래 400x700 viewBox 기준 → padded 기준으로 오프셋)
 // side: 라벨이 어느 쪽에 위치하는지
 interface PartTarget {
@@ -87,9 +87,9 @@ export default function FittingResult({ body, clothingMeasurements, category }: 
   const partTargets = useMemo(() => getPartTargets(avatarDims), [avatarDims]);
 
   // 라벨 크기 (viewBox 단위)
-  const LABEL_W = 120;
-  const LABEL_H = 40;
-  const LABEL_PAD = 8;
+  const LABEL_W = 72;
+  const LABEL_H = 48;
+  const LABEL_PAD = 2;
 
   return (
     <div className="flex flex-col items-center w-full">
@@ -148,12 +148,12 @@ export default function FittingResult({ body, clothingMeasurements, category }: 
                   fill="white" stroke={style.stroke} strokeWidth={1.5} />
 
                 {/* 라벨 텍스트 */}
-                <text x={lx + LABEL_W / 2} y={ly + 15} textAnchor="middle"
-                  fontSize={12} fontWeight={600} fill="#374151">
+                <text x={lx + LABEL_W / 2} y={ly + 19} textAnchor="middle"
+                  fontSize={14} fontWeight={600} fill="#374151">
                   {t(`fit.part.${r.part}`)}
                 </text>
-                <text x={lx + LABEL_W / 2} y={ly + 31} textAnchor="middle"
-                  fontSize={11} fontWeight={700}
+                <text x={lx + LABEL_W / 2} y={ly + 37} textAnchor="middle"
+                  fontSize={13} fontWeight={700}
                   fill={r.level === 'tight' ? '#dc2626' : r.level === 'loose' ? '#ca8a04' : '#16a34a'}>
                   {r.bodyValue > 0 ? `${easeStr}cm` : `${r.clothValue}cm`}
                 </text>
