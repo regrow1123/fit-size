@@ -75,6 +75,9 @@ export default function ClothingSvg({
         </clipPath>
       </defs>
 
+      {/* Layer 0: White mask to hide avatar under clothing */}
+      <path d={bodyPath} fill="white" stroke="none" />
+
       {/* Layer 1-2: Sleeves behind body (skip if integrated into body path) */}
       {leftSleeve.path && (
         <g transform={leftSleeve.transform}>
