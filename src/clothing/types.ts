@@ -1,14 +1,16 @@
 import type { AvatarDimensions, ClothingCategory, ClothingDimensions } from '../types';
 
-export interface ClothingRegion {
-  id: string;
+export interface ClothingOverlay {
+  id: string;       // 'chest' | 'sleeve_left' | 'sleeve_right'
+  fitKey: string;    // analyzeFit의 key
   buildPath: (av: AvatarDimensions, cl: ClothingDimensions, cx: number) => string;
-  fitKey?: string;
 }
 
 export interface ClothingTemplate {
   category: ClothingCategory;
-  regions: ClothingRegion[];
+  buildSilhouette: (av: AvatarDimensions, cl: ClothingDimensions, cx: number) => string;
+  overlays: ClothingOverlay[];
+  buildSeams: (av: AvatarDimensions, cl: ClothingDimensions, cx: number) => string[];
 }
 
 export type FitLevel = 'good' | 'loose' | 'tight';

@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import type { AvatarDimensions, BodyMeasurements, ClothingDimensions } from '../types';
-import { tshirtTemplate, buildSeamPaths } from '../clothing/templates/tshirt';
-import { analyzeFit, getFitColor, getFitStrokeColor } from '../clothing/fitAnalysis';
+import { tshirtTemplate } from '../clothing/templates/tshirt';
+import { analyzeFit, getFitColor, SILHOUETTE_FILL, SILHOUETTE_STROKE } from '../clothing/fitAnalysis';
 import type { FitResult } from '../clothing/types';
 
 interface Props {
@@ -11,23 +11,6 @@ interface Props {
   body: BodyMeasurements;
   canvasWidth: number;
   canvasHeight?: number;
-}
-
-const REGION_LABELS: Record<string, string> = {
-  body: '몸통',
-  sleeve_right: '오른쪽 소매',
-  sleeve_left: '왼쪽 소매',
-  collar: '어깨/넥라인',
-};
-
-function getRegionFitKey(regionId: string): string {
-  const map: Record<string, string> = {
-    body: 'chest',
-    sleeve_right: 'sleeve',
-    sleeve_left: 'sleeve',
-    collar: 'shoulder',
-  };
-  return map[regionId] ?? regionId;
 }
 
 export default function ClothingSvg({
@@ -43,53 +26,69 @@ export default function ClothingSvg({
   );
 
   const cx = canvasWidth / 2;
+  const template = tshirtTemplate;
 
-  const regions = useMemo(
-    () =>
-      tshirtTemplate.regions.map(region => ({
-        ...region,
-        path: region.buildPath(avatarDims, clothingDims, cx),
-      })),
+  const silhouettePath = useMemo(
+    () => template.buildSilhouette(avatarDims, clothingDims, cx),
+    [avatarDims, clothingDims, cx],
+  );
+
+  const overlayPaths = useMemo(
+    () => template.overlays.map(ov => ({
+      id: ov.id,
+      fitKey: ov.fitKey,
+      path: ov.buildPath(avatarDims, clothingDims, cx),
+    })),
     [avatarDims, clothingDims, cx],
   );
 
   const seams = useMemo(
-    () => buildSeamPaths(avatarDims, clothingDims, cx),
+    () => template.buildSeams(avatarDims, clothingDims, cx),
     [avatarDims, clothingDims, cx],
   );
 
   return (
     <g>
-      {regions.map(region => {
-        const fitKey = getRegionFitKey(region.id);
-        const regionFit = fitResult.regions[fitKey];
-        const level = regionFit?.level ?? 'good';
-        const ease = regionFit?.ease ?? 0;
-        const label = REGION_LABELS[region.id] ?? region.id;
-        const tooltip = `${label}: ${ease >= 0 ? '+' : ''}${ease.toFixed(1)}cm`;
+      {/* clipPath definition */}
+      <defs>
+        <clipPath id="clothing-clip">
+          <path d={silhouettePath} />
+        </clipPath>
+      </defs>
 
-        return (
-          <path
-            key={region.id}
-            d={region.path}
-            fill={getFitColor(level)}
-            stroke={getFitStrokeColor(level)}
-            strokeWidth={1.5}
-            strokeLinejoin="round"
-            strokeLinecap="round"
-            style={{ pointerEvents: 'auto', cursor: 'pointer' }}
-          >
-            <title>{tooltip}</title>
-          </path>
-        );
-      })}
+      {/* Base silhouette */}
+      <path
+        d={silhouettePath}
+        fill={SILHOUETTE_FILL}
+        stroke={SILHOUETTE_STROKE}
+        strokeWidth={1.5}
+        strokeLinejoin="round"
+        strokeLinecap="round"
+      />
+
+      {/* Fit color overlays (clipped to silhouette) */}
+      <g clipPath="url(#clothing-clip)">
+        {overlayPaths.map(ov => {
+          const regionFit = fitResult.regions[ov.fitKey];
+          const level = regionFit?.level ?? 'good';
+          return (
+            <path
+              key={ov.id}
+              d={ov.path}
+              fill={getFitColor(level)}
+              stroke="none"
+            />
+          );
+        })}
+      </g>
+
       {/* Seam lines */}
       {seams.map((d, i) => (
         <path
           key={`seam-${i}`}
           d={d}
           fill="none"
-          stroke="rgba(30, 80, 140, 0.2)"
+          stroke="rgba(80, 100, 120, 0.25)"
           strokeWidth={0.5}
           strokeDasharray="3 4"
         />
