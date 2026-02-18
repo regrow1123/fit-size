@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import type { BodyMeasurements, ClothingCategory } from './types';
 import ClothingInputForm from './components/ClothingInputForm';
-import FittingCanvas from './components/FittingCanvas';
+// import FittingCanvas from './components/FittingCanvas';
+import FittingPixi from './components/FittingPixi';
 import ReverseInputForm from './components/ReverseInputForm';
 import ProductRecommendations from './components/ProductRecommendations';
 import FitResultPanel from './components/FitResultPanel';
@@ -320,7 +321,7 @@ export default function App() {
 
           <div className="flex justify-center">
             {body ? (
-              <FittingCanvas
+              <FittingPixi
                 body={body}
                 clothingMeasurements={step === 'result' ? clothing ?? undefined : undefined}
                 category={category}
