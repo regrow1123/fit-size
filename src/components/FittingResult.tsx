@@ -2,7 +2,7 @@ import { useRef, useEffect, useState, useCallback, useMemo } from 'react';
 import type { BodyMeasurements, ClothingCategory } from '../types';
 import { calculateAvatarDimensions } from '../utils/avatarCalculator';
 import { calculateClothingDimensions } from '../utils/clothingRenderer';
-import { judgeFit, type FitResult, type FitLevel } from '../utils/fitJudgment';
+import { judgeFit, type FitLevel } from '../utils/fitJudgment';
 import { estimateBodyDimensions } from '../data/bodyStats';
 import { useTranslation } from '../i18n';
 import AvatarSvg from './AvatarSvg';
@@ -39,54 +39,7 @@ const LEVEL_STYLE: Record<FitLevel, { color: string; bg: string; border: string;
   loose: { color: 'text-yellow-600', bg: 'bg-yellow-50', border: 'border-yellow-200', emoji: '🟡' },
 };
 
-// 부위별 라벨 위치 (SVG viewBox 기준 비율)
-const LABEL_POSITIONS: Record<string, { x: number; y: number; side: 'left' | 'right' }> = {
-  shoulder: { x: 0.85, y: 0.16, side: 'right' },
-  chest:    { x: 0.12, y: 0.28, side: 'left' },
-  waist:    { x: 0.85, y: 0.42, side: 'right' },
-  hip:      { x: 0.12, y: 0.48, side: 'left' },
-  length:   { x: 0.85, y: 0.55, side: 'right' },
-  sleeve:   { x: 0.10, y: 0.20, side: 'left' },
-};
-
-function FitLabel({ result, x, y, side, t }: {
-  result: FitResult;
-  x: number;
-  y: number;
-  side: 'left' | 'right';
-  t: (k: string) => string;
-}) {
-  const style = LEVEL_STYLE[result.level];
-  const easeStr = result.ease >= 0 ? `+${result.ease.toFixed(1)}` : result.ease.toFixed(1);
-
-  return (
-    <div
-      className={`absolute pointer-events-none`}
-      style={{
-        left: `${x * 100}%`,
-        top: `${y * 100}%`,
-        transform: side === 'left' ? 'translate(-100%, -50%)' : 'translate(0%, -50%)',
-      }}
-    >
-      <div className={`flex items-center gap-1 px-2 py-1 rounded-lg border text-xs whitespace-nowrap shadow-sm ${style.bg} ${style.border}`}>
-        {side === 'right' && (
-          <span className={`text-[10px] ${style.color}`}>◀</span>
-        )}
-        <div className="flex flex-col">
-          <span className="font-semibold text-gray-700 text-[11px]">{t(`fit.part.${result.part}`)}</span>
-          {result.bodyValue > 0 ? (
-            <span className={`font-bold ${style.color} text-[11px]`}>{easeStr}cm {style.emoji}</span>
-          ) : (
-            <span className="text-gray-500 text-[11px]">{result.clothValue}cm</span>
-          )}
-        </div>
-        {side === 'left' && (
-          <span className={`text-[10px] ${style.color}`}>▶</span>
-        )}
-      </div>
-    </div>
-  );
-}
+// (라벨 오버레이 제거 — 모바일에서 잘림 문제로 리스트 방식으로 전환)
 
 export default function FittingResult({ body, clothingMeasurements, category }: Props) {
   const { t } = useTranslation();
@@ -171,19 +124,28 @@ export default function FittingResult({ body, clothingMeasurements, category }: 
           )}
         </svg>
 
-        {/* 핏 라벨 오버레이 */}
+      </div>
+
+      {/* 부위별 핏 결과 리스트 */}
+      <div className="w-full max-w-[400px] mt-4 space-y-2">
         {fitResults.map(r => {
-          const pos = LABEL_POSITIONS[r.part];
-          if (!pos) return null;
+          const style = LEVEL_STYLE[r.level];
+          const easeStr = r.ease >= 0 ? `+${r.ease.toFixed(1)}` : r.ease.toFixed(1);
           return (
-            <FitLabel
-              key={r.part}
-              result={r}
-              x={pos.x}
-              y={pos.y}
-              side={pos.side}
-              t={t}
-            />
+            <div key={r.part} className={`flex items-center justify-between rounded-lg px-4 py-3 border ${style.bg} ${style.border}`}>
+              <div className="flex items-center gap-2">
+                <span className="text-base">{style.emoji}</span>
+                <span className="font-semibold text-gray-700 text-sm">{t(`fit.part.${r.part}`)}</span>
+              </div>
+              {r.bodyValue > 0 ? (
+                <div className="flex items-center gap-3 text-sm">
+                  <span className="text-gray-400">{r.bodyValue}cm → {r.clothValue}cm</span>
+                  <span className={`font-bold ${style.color}`}>{easeStr}cm</span>
+                </div>
+              ) : (
+                <span className="text-gray-500 text-sm">{r.clothValue}cm</span>
+              )}
+            </div>
           );
         })}
       </div>
