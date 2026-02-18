@@ -33,7 +33,7 @@ const FIXED_CLOTHING = new Map<string, number>([
   ['sleeveCirc', 38],
 ]);
 
-export default function FittingCanvas({ body, clothingMeasurements, category = 'tshirt' }: Props) {
+export default function FittingCanvas({ body: _body, clothingMeasurements, category = 'tshirt' }: Props) {
   const { t } = useTranslation();
   const containerRef = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState({ w: BASE_WIDTH, h: BASE_HEIGHT });
