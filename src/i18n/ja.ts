@@ -2,7 +2,7 @@ import type { TranslationDict } from './types';
 
 const ja: TranslationDict = {
   // App
-  'app.subtitle': 'オンラインショッピングのフィッティングルーム 🪞',
+  'app.subtitle': '返品率0%のためのフィッティングルーム 🪞',
   'app.step.body': '体型設定',
   'app.step.bodyDesc': '身長・体重入力',
   'app.step.clothing': '服のサイズ',

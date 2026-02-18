@@ -2,7 +2,7 @@ import type { TranslationDict } from './types';
 
 const ko: TranslationDict = {
   // App
-  'app.subtitle': '온라인 쇼핑의 피팅룸 🪞',
+  'app.subtitle': '반품률 0%를 위한 피팅룸 🪞',
   'app.step.body': '체형 설정',
   'app.step.bodyDesc': '키·몸무게 입력',
   'app.step.clothing': '옷 치수',
