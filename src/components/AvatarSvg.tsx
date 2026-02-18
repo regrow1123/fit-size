@@ -165,7 +165,7 @@ export default function AvatarSvg({ avatarDims: d, canvasWidth }: Props) {
     for (let t = 0; t < 4; t++) {
       const ratio = (t + 1) / 5;
       const ty = toeStartY - toeSpread * 0.3 + ratio * toeSpread;
-      const bump = [1.2, 1.8, 1.5, 1.0][t]; // 돌출 크기
+      const bump = [2.0, 3.0, 2.5, 1.8][t]; // 돌출 크기
       // 발끝 방향(+s*X)으로 살짝 튀어나왔다 돌아오는 범프
       p += ` Q ${toeStartX + s * bump} ${ty - 0.5}, ${toeStartX + s * bump * 0.3} ${ty + 0.8}`;
     }
