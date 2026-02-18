@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState, useCallback, useMemo } from 'react';
+import { useMemo } from 'react';
 import type { BodyMeasurements, ClothingCategory } from '../types';
 import { calculateAvatarDimensions } from '../utils/avatarCalculator';
 import { calculateClothingDimensions } from '../utils/clothingRenderer';
@@ -14,8 +14,8 @@ interface Props {
   category: ClothingCategory;
 }
 
-const BASE_WIDTH = 400;
-const BASE_HEIGHT = 700;
+const SVG_W = 400;
+const SVG_H = 700;
 
 const FIXED_BODY: BodyMeasurements = { height: 175, weight: 70, gender: 'male' as const };
 const FIXED_CLOTHING = new Map<string, number>([
@@ -23,38 +23,38 @@ const FIXED_CLOTHING = new Map<string, number>([
   ['sleeveLength', 25], ['hemWidth', 50], ['sleeveCirc', 42],
 ]);
 
-const LEVEL_STYLE: Record<FitLevel, { color: string; bg: string; border: string; emoji: string; line: string }> = {
-  tight: { color: 'text-red-600', bg: 'bg-red-50', border: 'border-red-200', emoji: '🔴', line: 'bg-red-300' },
-  good:  { color: 'text-green-600', bg: 'bg-green-50', border: 'border-green-200', emoji: '🟢', line: 'bg-green-300' },
-  loose: { color: 'text-yellow-600', bg: 'bg-yellow-50', border: 'border-yellow-200', emoji: '🟡', line: 'bg-yellow-300' },
+const LEVEL_STYLE: Record<FitLevel, { color: string; bg: string; border: string; emoji: string; stroke: string }> = {
+  tight: { color: 'text-red-600', bg: 'bg-red-50', border: 'border-red-200', emoji: '🔴', stroke: '#fca5a5' },
+  good:  { color: 'text-green-600', bg: 'bg-green-50', border: 'border-green-200', emoji: '🟢', stroke: '#86efac' },
+  loose: { color: 'text-yellow-600', bg: 'bg-yellow-50', border: 'border-yellow-200', emoji: '🟡', stroke: '#fde047' },
 };
 
-// 부위별 Y 위치 (아바타 높이 비율) 및 좌우 배치
-const PART_CONFIG: Record<string, { yRatio: number; side: 'left' | 'right' }> = {
-  shoulder: { yRatio: 0.15, side: 'right' },
-  chest:    { yRatio: 0.27, side: 'left' },
-  waist:    { yRatio: 0.40, side: 'right' },
-  length:   { yRatio: 0.53, side: 'left' },
-  sleeve:   { yRatio: 0.22, side: 'right' },
-};
+// 전체 캔버스(SVG+라벨 패딩)에서의 라벨/화살표 설정
+// viewBox를 넓혀서 양옆에 라벨 공간 확보
+const PADDED_W = 700; // SVG_W(400) + 좌150 + 우150
+const PAD_LEFT = 150;
+// 아바타 부위별 타겟 좌표 (원래 400x700 viewBox 기준 → padded 기준으로 오프셋)
+// side: 라벨이 어느 쪽에 위치하는지
+interface PartTarget {
+  tx: number; ty: number; // 아바타 위 타겟 점 (padded viewBox)
+  side: 'left' | 'right';
+  labelY: number; // 라벨 Y (padded viewBox)
+}
+
+function getPartTargets(av: ReturnType<typeof calculateAvatarDimensions>): Record<string, PartTarget> {
+  const cx = SVG_W / 2 + PAD_LEFT; // 아바타 중심 (padded)
+  const shH = av.shoulderWidth / 2;
+  return {
+    shoulder: { tx: cx + shH - 5, ty: av.shoulderY - 10, side: 'right', labelY: av.shoulderY - 10 },
+    chest:    { tx: cx - av.chestWidth / 2 - 5, ty: av.chestY, side: 'left', labelY: av.chestY },
+    waist:    { tx: cx + av.waistWidth / 2 + 5, ty: av.waistY, side: 'right', labelY: av.waistY },
+    length:   { tx: cx - 15, ty: av.shoulderY + 240, side: 'left', labelY: av.shoulderY + 240 },
+    sleeve:   { tx: cx + shH + 30, ty: av.shoulderY + 50, side: 'right', labelY: av.shoulderY + 50 },
+  };
+}
 
 export default function FittingResult({ body, clothingMeasurements, category }: Props) {
   const { t } = useTranslation();
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [avatarH, setAvatarH] = useState(500);
-
-  const measureAvatar = useCallback(() => {
-    if (!containerRef.current) return;
-    const svg = containerRef.current.querySelector('svg');
-    if (svg) setAvatarH(svg.clientHeight);
-  }, []);
-
-  useEffect(() => {
-    measureAvatar();
-    const ro = new ResizeObserver(measureAvatar);
-    if (containerRef.current) ro.observe(containerRef.current);
-    return () => ro.disconnect();
-  }, [measureAvatar]);
 
   const avatarDims = useMemo(() => calculateAvatarDimensions(FIXED_BODY), []);
   const clothingDims = useMemo(
@@ -84,8 +84,12 @@ export default function FittingResult({ body, clothingMeasurements, category }: 
   const overallLevel: FitLevel = measuredResults.length === 0 ? 'good' : hasTight ? 'tight' : hasLoose ? 'loose' : 'good';
   const overallStyle = LEVEL_STYLE[overallLevel];
 
-  const leftLabels = fitResults.filter(r => PART_CONFIG[r.part]?.side === 'left');
-  const rightLabels = fitResults.filter(r => PART_CONFIG[r.part]?.side === 'right');
+  const partTargets = useMemo(() => getPartTargets(avatarDims), [avatarDims]);
+
+  // 라벨 크기 (viewBox 단위)
+  const LABEL_W = 120;
+  const LABEL_H = 40;
+  const LABEL_PAD = 8;
 
   return (
     <div className="flex flex-col items-center w-full">
@@ -97,80 +101,66 @@ export default function FittingResult({ body, clothingMeasurements, category }: 
         </div>
       </div>
 
-      {/* 3컬럼: 왼쪽 라벨 | 아바타 | 오른쪽 라벨 */}
-      <div className="w-full bg-white rounded-xl border shadow-sm p-2 sm:p-4">
-        <div className="flex items-stretch">
-          {/* 왼쪽 라벨 */}
-          <div className="flex-1 flex flex-col justify-start relative min-w-0" style={{ minHeight: avatarH }}>
-            {leftLabels.map(r => {
-              const cfg = PART_CONFIG[r.part];
-              if (!cfg) return null;
-              const style = LEVEL_STYLE[r.level];
-              const easeStr = r.ease >= 0 ? `+${r.ease.toFixed(1)}` : r.ease.toFixed(1);
-              return (
-                <div
-                  key={r.part}
-                  className="absolute right-0 flex items-center gap-1"
-                  style={{ top: `${cfg.yRatio * 100}%` }}
-                >
-                  <div className={`px-2 py-1 rounded-lg border text-right ${style.bg} ${style.border}`}>
-                    <div className="font-semibold text-gray-700 text-[11px] sm:text-xs">{t(`fit.part.${r.part}`)}</div>
-                    {r.bodyValue > 0 ? (
-                      <div className={`font-bold ${style.color} text-[11px] sm:text-xs`}>{easeStr}cm</div>
-                    ) : (
-                      <div className="text-gray-500 text-[11px] sm:text-xs">{r.clothValue}cm</div>
-                    )}
-                  </div>
-                  <div className={`w-3 sm:w-5 h-[2px] ${style.line}`} />
-                </div>
-              );
-            })}
-          </div>
+      {/* 통합 SVG: 아바타 + 옷 + 라벨 + 화살표 */}
+      <div className="w-full bg-white rounded-xl border shadow-sm p-2">
+        <svg viewBox={`0 0 ${PADDED_W} ${SVG_H}`} className="w-full h-auto">
+          {/* 아바타 + 옷 (원래 위치에서 PAD_LEFT만큼 오른쪽으로) */}
+          <g transform={`translate(${PAD_LEFT}, 0)`}>
+            <AvatarSvg avatarDims={avatarDims} canvasWidth={SVG_W} canvasHeight={SVG_H} />
+            {clothingDims && (
+              <ClothingSvg
+                avatarDims={avatarDims} clothingDims={clothingDims}
+                clothingCm={clothingMeasurements} body={FIXED_BODY}
+                canvasWidth={SVG_W} canvasHeight={SVG_H}
+              />
+            )}
+          </g>
 
-          {/* 아바타 */}
-          <div ref={containerRef} className="flex-shrink-0" style={{ width: '45%', maxWidth: 220 }}>
-            <svg
-              viewBox={`0 0 ${BASE_WIDTH} ${BASE_HEIGHT}`}
-              className="w-full h-auto"
-            >
-              <AvatarSvg avatarDims={avatarDims} canvasWidth={BASE_WIDTH} canvasHeight={BASE_HEIGHT} />
-              {clothingDims && (
-                <ClothingSvg
-                  avatarDims={avatarDims} clothingDims={clothingDims}
-                  clothingCm={clothingMeasurements} body={FIXED_BODY}
-                  canvasWidth={BASE_WIDTH} canvasHeight={BASE_HEIGHT}
+          {/* 라벨 + 화살표 */}
+          {fitResults.map(r => {
+            const cfg = partTargets[r.part];
+            if (!cfg) return null;
+            const style = LEVEL_STYLE[r.level];
+            const easeStr = r.ease >= 0 ? `+${r.ease.toFixed(1)}` : r.ease.toFixed(1);
+
+            // 라벨 위치
+            const lx = cfg.side === 'left' ? LABEL_PAD : PADDED_W - LABEL_W - LABEL_PAD;
+            const ly = cfg.labelY - LABEL_H / 2;
+
+            // 화살표 시작점 (라벨 끝)
+            const arrowStartX = cfg.side === 'left' ? lx + LABEL_W : lx;
+            const arrowStartY = cfg.labelY;
+
+            return (
+              <g key={r.part}>
+                {/* 화살표 선 */}
+                <line
+                  x1={arrowStartX} y1={arrowStartY}
+                  x2={cfg.tx} y2={cfg.ty}
+                  stroke={style.stroke} strokeWidth={2}
+                  strokeDasharray="4 3"
                 />
-              )}
-            </svg>
-          </div>
+                {/* 화살표 끝 점 */}
+                <circle cx={cfg.tx} cy={cfg.ty} r={4} fill={style.stroke} />
 
-          {/* 오른쪽 라벨 */}
-          <div className="flex-1 flex flex-col justify-start relative min-w-0" style={{ minHeight: avatarH }}>
-            {rightLabels.map(r => {
-              const cfg = PART_CONFIG[r.part];
-              if (!cfg) return null;
-              const style = LEVEL_STYLE[r.level];
-              const easeStr = r.ease >= 0 ? `+${r.ease.toFixed(1)}` : r.ease.toFixed(1);
-              return (
-                <div
-                  key={r.part}
-                  className="absolute left-0 flex items-center gap-1"
-                  style={{ top: `${cfg.yRatio * 100}%` }}
-                >
-                  <div className={`w-3 sm:w-5 h-[2px] ${style.line}`} />
-                  <div className={`px-2 py-1 rounded-lg border text-left ${style.bg} ${style.border}`}>
-                    <div className="font-semibold text-gray-700 text-[11px] sm:text-xs">{t(`fit.part.${r.part}`)}</div>
-                    {r.bodyValue > 0 ? (
-                      <div className={`font-bold ${style.color} text-[11px] sm:text-xs`}>{easeStr}cm</div>
-                    ) : (
-                      <div className="text-gray-500 text-[11px] sm:text-xs">{r.clothValue}cm</div>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
+                {/* 라벨 배경 */}
+                <rect x={lx} y={ly} width={LABEL_W} height={LABEL_H} rx={8}
+                  fill="white" stroke={style.stroke} strokeWidth={1.5} />
+
+                {/* 라벨 텍스트 */}
+                <text x={lx + LABEL_W / 2} y={ly + 15} textAnchor="middle"
+                  fontSize={12} fontWeight={600} fill="#374151">
+                  {t(`fit.part.${r.part}`)}
+                </text>
+                <text x={lx + LABEL_W / 2} y={ly + 31} textAnchor="middle"
+                  fontSize={11} fontWeight={700}
+                  fill={r.level === 'tight' ? '#dc2626' : r.level === 'loose' ? '#ca8a04' : '#16a34a'}>
+                  {r.bodyValue > 0 ? `${easeStr}cm` : `${r.clothValue}cm`}
+                </text>
+              </g>
+            );
+          })}
+        </svg>
       </div>
 
       {/* 범례 */}
