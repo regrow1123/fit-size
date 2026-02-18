@@ -4,10 +4,8 @@ import type { ClothingTemplate } from '../types';
 const ARM_ANGLE = 15 * Math.PI / 180;
 const sinA = Math.sin(ARM_ANGLE);
 const cosA = Math.cos(ARM_ANGLE);
-const perpX = cosA;
-const perpY = -sinA;
 
-/** Shared intermediate values computed from avatar + clothing dims */
+/** Shared intermediate values — 옷 폭은 최소 몸 폭 이상 보장 */
 function calc(av: AvatarDimensions, cl: ClothingDimensions, cx: number) {
   const sy = av.shoulderY;
   const avShH = av.shoulderWidth / 2;
@@ -38,10 +36,10 @@ function calc(av: AvatarDimensions, cl: ClothingDimensions, cx: number) {
     : hemH;
 
   const slLen = cl.sleeveLength;
-  const minSleeveW = av.upperArmWidth / 2;
-  const slTopW = Math.max(cl.sleeveWidth, minSleeveW);
-  const slEndW = Math.max(slTopW * 0.88, minSleeveW * 0.85);
-  const slMidW = Math.max(slTopW * 0.94, minSleeveW * 0.9);
+  const minSlW = av.upperArmWidth / 2;
+  const slTopW = Math.max(cl.sleeveWidth, minSlW);
+  const slEndW = Math.max(slTopW * 0.88, minSlW * 0.85);
+  const slMidW = Math.max(slTopW * 0.94, minSlW * 0.9);
 
   return {
     cx, sy, shH, chH, hemH, nkH, hemY,
@@ -51,62 +49,51 @@ function calc(av: AvatarDimensions, cl: ClothingDimensions, cx: number) {
   };
 }
 
-/** Compute sleeve key points for a side (1=right, -1=left) */
-function sp(c: ReturnType<typeof calc>, side: 1 | -1) {
-  const { cx, sy, shH, slLen, slEndW, slMidW, slTopW } = c;
-  const tipCX = cx + side * (shH + slLen * sinA);
-  const tipCY = sy + slLen * cosA;
-  const midCX = cx + side * (shH + slLen * sinA * 0.5);
-  const midCY = sy + slLen * cosA * 0.5;
-  const pX = side * perpX;
-  const pY = side * perpY;
-  // Outer edge points
-  const outerMidX = midCX + pX * slMidW * 0.5;
-  const outerMidY = midCY + pY * slMidW * 0.5;
-  const outerTipX = tipCX + pX * slEndW * 0.5;
-  const outerTipY = tipCY + pY * slEndW * 0.5;
-  // Inner edge points
-  const innerMidX = midCX - pX * slMidW * 0.5;
-  const innerMidY = midCY - pY * slMidW * 0.5;
-  const innerTipX = tipCX - pX * slEndW * 0.5;
-  const innerTipY = tipCY - pY * slEndW * 0.5;
-  return { tipCX, tipCY, midCX, midCY, pX, pY,
-    outerMidX, outerMidY, outerTipX, outerTipY,
-    innerMidX, innerMidY, innerTipX, innerTipY,
-    slLen, slTopW, slEndW, slMidW };
-}
-
-/** Build the entire t-shirt as one continuous path (한붓그리기) */
+/**
+ * 옷 전체를 한붓그리기 — 원래 Canvas drawTshirt 코드를 1:1 SVG 변환.
+ * perpX/perpY는 side로 뒤집지 않고 원본 그대로 사용.
+ */
 function buildSilhouette(av: AvatarDimensions, cl: ClothingDimensions, cx: number): string {
   const c = calc(av, cl, cx);
-  const { sy, shH, nkH, chH, hemH, hemY, armpitH, armpitY, ubH, waH, hiH, waistInRange, hipInRange, slLen } = c;
+  const { sy, shH, nkH, chH, hemH, hemY, armpitH, armpitY, ubH, waH, hiH, waistInRange, hipInRange, slLen, slTopW, slEndW, slMidW } = c;
+
+  const perpX = cosA;
+  const perpY = -sinA;
   const neckDepth = 8;
-  const R = sp(c, 1);   // right sleeve
-  const L = sp(c, -1);  // left sleeve
+
+  // 오른쪽 소매 포인트
+  const rTipCX = cx + shH + slLen * sinA;
+  const rTipCY = sy + slLen * cosA;
+  const rMidCX = cx + shH + slLen * sinA * 0.5;
+  const rMidCY = sy + slLen * cosA * 0.5;
+
+  // 왼쪽 소매 포인트
+  const lTipCX = cx - shH - slLen * sinA;
+  const lTipCY = sy + slLen * cosA;
+  const lMidCX = cx - shH - slLen * sinA * 0.5;
+  const lMidCY = sy + slLen * cosA * 0.5;
 
   const d: string[] = [];
 
-  // === 1. Start at neckline left ===
+  // ── 네크라인 ──
   d.push(`M ${cx - nkH} ${sy - 3}`);
-
-  // === 2. Neckline (left → right) ===
   d.push(`C ${cx - nkH * 0.6} ${sy + neckDepth * 0.3}, ${cx + nkH * 0.6} ${sy + neckDepth * 0.3}, ${cx + nkH} ${sy - 3}`);
 
-  // === 3. Right shoulder (neck → shoulder) ===
+  // ── 오른쪽 어깨선 ──
   d.push(`C ${cx + nkH + (shH - nkH) * 0.3} ${sy - 4}, ${cx + shH - (shH - nkH) * 0.2} ${sy - 1}, ${cx + shH} ${sy}`);
 
-  // === 4. Right sleeve outer: shoulder → mid → tip ===
-  d.push(`C ${cx + shH + slLen * sinA * 0.15 + R.pX * R.slTopW * 0.1} ${sy + slLen * cosA * 0.15 + R.pY * R.slTopW * 0.1}, ${R.midCX + R.pX * R.slMidW * 0.52} ${R.midCY + R.pY * R.slMidW * 0.52}, ${R.outerMidX} ${R.outerMidY}`);
-  d.push(`C ${R.midCX + R.pX * R.slMidW * 0.48 + slLen * sinA * 0.15} ${R.midCY + R.pY * R.slMidW * 0.48 + slLen * cosA * 0.15}, ${R.outerTipX - slLen * sinA * 0.08} ${R.outerTipY - slLen * cosA * 0.08}, ${R.outerTipX} ${R.outerTipY}`);
+  // ── 오른쪽 소매 외측: 어깨 → 중간 → 끝 ──
+  d.push(`C ${cx + shH + slLen * sinA * 0.15 + perpX * slTopW * 0.1} ${sy + slLen * cosA * 0.15 + perpY * slTopW * 0.1}, ${rMidCX + perpX * slMidW * 0.52} ${rMidCY + perpY * slMidW * 0.52}, ${rMidCX + perpX * slMidW * 0.5} ${rMidCY + perpY * slMidW * 0.5}`);
+  d.push(`C ${rMidCX + perpX * slMidW * 0.48 + slLen * sinA * 0.15} ${rMidCY + perpY * slMidW * 0.48 + slLen * cosA * 0.15}, ${rTipCX + perpX * slEndW * 0.5 - slLen * sinA * 0.08} ${rTipCY + perpY * slEndW * 0.5 - slLen * cosA * 0.08}, ${rTipCX + perpX * slEndW * 0.5} ${rTipCY + perpY * slEndW * 0.5}`);
 
-  // === 5. Right sleeve cap ===
-  d.push(`C ${R.tipCX + R.pX * R.slEndW * 0.2} ${R.tipCY + R.pY * R.slEndW * 0.2 + 2}, ${R.tipCX - R.pX * R.slEndW * 0.2} ${R.tipCY - R.pY * R.slEndW * 0.2 + 2}, ${R.innerTipX} ${R.innerTipY}`);
+  // ── 오른쪽 소매 끝단 ──
+  d.push(`C ${rTipCX + perpX * slEndW * 0.2} ${rTipCY + perpY * slEndW * 0.2 + 2}, ${rTipCX - perpX * slEndW * 0.2} ${rTipCY - perpY * slEndW * 0.2 + 2}, ${rTipCX - perpX * slEndW * 0.5} ${rTipCY - perpY * slEndW * 0.5}`);
 
-  // === 6. Right sleeve inner: tip → mid → armpit ===
-  d.push(`C ${R.innerTipX - slLen * sinA * 0.08} ${R.innerTipY - slLen * cosA * 0.08}, ${R.midCX - R.pX * R.slMidW * 0.48 + slLen * sinA * 0.15} ${R.midCY - R.pY * R.slMidW * 0.48 + slLen * cosA * 0.15}, ${R.innerMidX} ${R.innerMidY}`);
-  d.push(`C ${R.midCX - R.pX * R.slMidW * 0.52 - slLen * sinA * 0.15} ${R.midCY - R.pY * R.slMidW * 0.52 - slLen * cosA * 0.15}, ${cx + armpitH + 3} ${armpitY - (armpitY - sy) * 0.2}, ${cx + armpitH} ${armpitY}`);
+  // ── 오른쪽 소매 내측 → 겨드랑이 ──
+  d.push(`C ${rTipCX - perpX * slEndW * 0.5 - slLen * sinA * 0.08} ${rTipCY - perpY * slEndW * 0.5 - slLen * cosA * 0.08}, ${rMidCX - perpX * slMidW * 0.48 + slLen * sinA * 0.15} ${rMidCY - perpY * slMidW * 0.48 + slLen * cosA * 0.15}, ${rMidCX - perpX * slMidW * 0.5} ${rMidCY - perpY * slMidW * 0.5}`);
+  d.push(`C ${rMidCX - perpX * slMidW * 0.52 - slLen * sinA * 0.15} ${rMidCY - perpY * slMidW * 0.52 - slLen * cosA * 0.15}, ${cx + armpitH + 3} ${armpitY - (armpitY - sy) * 0.2}, ${cx + armpitH} ${armpitY}`);
 
-  // === 7. Right body: armpit → chest → underbust → ... → hem ===
+  // ── 오른쪽 몸통 ──
   d.push(`C ${cx + armpitH - 1} ${armpitY + (av.chestY - armpitY) * 0.5}, ${cx + chH + 2} ${av.chestY - (av.chestY - armpitY) * 0.15}, ${cx + chH} ${av.chestY}`);
   d.push(`C ${cx + chH - 0.5} ${av.chestY + (av.underbustY - av.chestY) * 0.5}, ${cx + ubH + 1} ${av.underbustY - (av.underbustY - av.chestY) * 0.15}, ${cx + ubH} ${av.underbustY}`);
 
@@ -122,10 +109,10 @@ function buildSilhouette(av: AvatarDimensions, cl: ClothingDimensions, cx: numbe
     d.push(`C ${cx + ubH - 0.5} ${av.underbustY + (hemY - av.underbustY) * 0.4}, ${cx + hemH + 1} ${hemY - (hemY - av.underbustY) * 0.15}, ${cx + hemH} ${hemY}`);
   }
 
-  // === 8. Hem (right → left) ===
+  // ── 밑단 ──
   d.push(`C ${cx + hemH * 0.6} ${hemY + 2}, ${cx - hemH * 0.6} ${hemY + 2}, ${cx - hemH} ${hemY}`);
 
-  // === 9. Left body: hem → ... → armpit ===
+  // ── 왼쪽 몸통 ──
   if (waistInRange) {
     if (hipInRange) {
       d.push(`C ${cx - hemH - 1} ${hemY - (hemY - av.hipY) * 0.15}, ${cx - hiH + 1} ${av.hipY + (hemY - av.hipY) * 0.4}, ${cx - hiH} ${av.hipY}`);
@@ -140,82 +127,75 @@ function buildSilhouette(av: AvatarDimensions, cl: ClothingDimensions, cx: numbe
   d.push(`C ${cx - ubH - 1} ${av.underbustY - (av.underbustY - av.chestY) * 0.15}, ${cx - chH + 0.5} ${av.chestY + (av.underbustY - av.chestY) * 0.5}, ${cx - chH} ${av.chestY}`);
   d.push(`C ${cx - chH - 2} ${av.chestY - (av.chestY - armpitY) * 0.15}, ${cx - armpitH + 1} ${armpitY + (av.chestY - armpitY) * 0.5}, ${cx - armpitH} ${armpitY}`);
 
-  // === 10. Left sleeve inner: armpit → mid → tip ===
-  // (Reverse of right inner: armpit outward to tip)
-  d.push(`C ${cx - armpitH - 3} ${armpitY - (armpitY - sy) * 0.2}, ${L.midCX + L.pX * L.slMidW * 0.52 + slLen * sinA * 0.15} ${L.midCY + L.pY * L.slMidW * 0.52 - slLen * cosA * 0.15}, ${L.innerMidX} ${L.innerMidY}`);
-  d.push(`C ${L.midCX + L.pX * L.slMidW * 0.48 - slLen * sinA * 0.15} ${L.midCY + L.pY * L.slMidW * 0.48 + slLen * cosA * 0.08}, ${L.innerTipX + slLen * sinA * 0.08} ${L.innerTipY - slLen * cosA * 0.08}, ${L.innerTipX} ${L.innerTipY}`);
+  // ── 왼쪽 소매 (perpX/perpY 뒤집지 않고 원본 그대로) ──
+  // 겨드랑이 → 소매 내측 중간
+  d.push(`C ${cx - armpitH - 3} ${armpitY - (armpitY - sy) * 0.2}, ${lMidCX + perpX * slMidW * 0.52 - slLen * sinA * 0.15} ${lMidCY + perpY * slMidW * 0.52 - slLen * cosA * 0.15}, ${lMidCX + perpX * slMidW * 0.5} ${lMidCY + perpY * slMidW * 0.5}`);
+  // 중간 → 소매끝 내측
+  d.push(`C ${lMidCX + perpX * slMidW * 0.48 + slLen * sinA * 0.15} ${lMidCY + perpY * slMidW * 0.48 + slLen * cosA * 0.15}, ${lTipCX + perpX * slEndW * 0.5 - slLen * sinA * 0.08} ${lTipCY + perpY * slEndW * 0.5 - slLen * cosA * 0.08}, ${lTipCX + perpX * slEndW * 0.5} ${lTipCY + perpY * slEndW * 0.5}`);
 
-  // === 11. Left sleeve cap (inner → outer) ===
-  d.push(`C ${L.tipCX - L.pX * L.slEndW * 0.2} ${L.tipCY - L.pY * L.slEndW * 0.2 + 2}, ${L.tipCX + L.pX * L.slEndW * 0.2} ${L.tipCY + L.pY * L.slEndW * 0.2 + 2}, ${L.outerTipX} ${L.outerTipY}`);
+  // 왼쪽 소매 끝단
+  d.push(`C ${lTipCX + perpX * slEndW * 0.2} ${lTipCY + perpY * slEndW * 0.2 + 2}, ${lTipCX - perpX * slEndW * 0.2} ${lTipCY - perpY * slEndW * 0.2 + 2}, ${lTipCX - perpX * slEndW * 0.5} ${lTipCY - perpY * slEndW * 0.5}`);
 
-  // === 12. Left sleeve outer: tip → mid → shoulder ===
-  d.push(`C ${L.outerTipX + slLen * sinA * 0.08} ${L.outerTipY - slLen * cosA * 0.08}, ${L.midCX - L.pX * L.slMidW * 0.48 - slLen * sinA * 0.15} ${L.midCY - L.pY * L.slMidW * 0.48 + slLen * cosA * 0.15}, ${L.outerMidX} ${L.outerMidY}`);
-  d.push(`C ${L.midCX - L.pX * L.slMidW * 0.52 + slLen * sinA * 0.15} ${L.midCY - L.pY * L.slMidW * 0.52 + slLen * cosA * 0.15}, ${cx - shH - slLen * sinA * 0.15 - L.pX * L.slTopW * 0.1} ${sy + slLen * cosA * 0.15 - L.pY * L.slTopW * 0.1}, ${cx - shH} ${sy}`);
+  // 왼쪽 소매 외측 → 어깨
+  d.push(`C ${lTipCX - perpX * slEndW * 0.5 + slLen * sinA * 0.08} ${lTipCY - perpY * slEndW * 0.5 - slLen * cosA * 0.08}, ${lMidCX - perpX * slMidW * 0.48 - slLen * sinA * 0.15} ${lMidCY - perpY * slMidW * 0.48 - slLen * cosA * 0.15}, ${lMidCX - perpX * slMidW * 0.5} ${lMidCY - perpY * slMidW * 0.5}`);
+  d.push(`C ${lMidCX - perpX * slMidW * 0.52 + slLen * sinA * 0.15} ${lMidCY - perpY * slMidW * 0.52 + slLen * cosA * 0.15}, ${cx - shH - slLen * sinA * 0.15 - perpX * slTopW * 0.1} ${sy + slLen * cosA * 0.15 - perpY * slTopW * 0.1}, ${cx - shH} ${sy}`);
 
-  // === 13. Left shoulder → neckline close ===
+  // ── 왼쪽 어깨선 → 네크라인 닫기 ──
   d.push(`C ${cx - shH + (shH - nkH) * 0.2} ${sy - 1}, ${cx - nkH - (shH - nkH) * 0.3} ${sy - 4}, ${cx - nkH} ${sy - 3}`);
 
   d.push('Z');
   return d.join(' ');
 }
 
-/** Chest/body overlay path — rectangular area covering the torso */
+/** 가슴/몸통 overlay (겨드랑이~밑단) */
 function buildChestOverlay(av: AvatarDimensions, cl: ClothingDimensions, cx: number): string {
   const c = calc(av, cl, cx);
   const { armpitH, armpitY, hemH, hemY } = c;
-  // Simple rectangle-ish area from armpit level to hem, armpit width
-  const topW = armpitH;
-  const botW = hemH;
-  return `M ${cx + topW} ${armpitY} L ${cx + botW} ${hemY} L ${cx - botW} ${hemY} L ${cx - topW} ${armpitY} Z`;
+  // 넉넉한 사각형 — clipPath가 실루엣 밖을 잘라줌
+  const w = Math.max(armpitH, hemH) + 5;
+  return `M ${cx - w} ${armpitY} L ${cx + w} ${armpitY} L ${cx + w} ${hemY + 5} L ${cx - w} ${hemY + 5} Z`;
 }
 
-/** Sleeve overlay path for one side */
+/** 소매 overlay */
 function buildSleeveOverlay(av: AvatarDimensions, cl: ClothingDimensions, cx: number, side: 'left' | 'right'): string {
-  const s = side === 'right' ? 1 : -1;
   const c = calc(av, cl, cx);
-  const { sy, shH, armpitH, armpitY } = c;
-  const pts = sp(c, s as 1 | -1);
+  const { sy, shH, armpitH, armpitY, slLen, slEndW } = c;
+  const s = side === 'right' ? 1 : -1;
 
-  // Quadrilateral: shoulder, outer tip, inner tip, armpit
+  const tipCX = cx + s * (shH + slLen * sinA);
+  const tipCY = sy + slLen * cosA;
+  // 넉넉한 사각형 — clipPath가 잘라줌
+  const shoulderX = cx + s * shH;
+  const armpitX = cx + s * armpitH;
+  const outerTipX = tipCX + s * slEndW * 0.6;
+
   return [
-    `M ${cx + s * shH} ${sy}`,
-    `L ${pts.outerTipX} ${pts.outerTipY}`,
-    `L ${pts.innerTipX} ${pts.innerTipY}`,
-    `L ${cx + s * armpitH} ${armpitY}`,
+    `M ${shoulderX} ${sy - 5}`,
+    `L ${outerTipX} ${tipCY - 5}`,
+    `L ${outerTipX} ${tipCY + 10}`,
+    `L ${armpitX} ${armpitY + 5}`,
     'Z',
   ].join(' ');
 }
 
-/** Shoulder seam lines */
+/** 어깨 봉제선 */
 function buildSeams(av: AvatarDimensions, cl: ClothingDimensions, cx: number): string[] {
   const sy = av.shoulderY;
   const shH = Math.max(cl.shoulderWidth / 2, av.shoulderWidth / 2);
   const nkH = av.neckWidth / 2;
 
-  return [1, -1].map(s => {
-    return `M ${cx + s * nkH} ${sy - 3} C ${cx + s * (nkH + (shH - nkH) * 0.4)} ${sy - 3}, ${cx + s * (shH - (shH - nkH) * 0.2)} ${sy - 1}, ${cx + s * shH} ${sy}`;
-  });
+  return [1, -1].map(s =>
+    `M ${cx + s * nkH} ${sy - 3} C ${cx + s * (nkH + (shH - nkH) * 0.4)} ${sy - 3}, ${cx + s * (shH - (shH - nkH) * 0.2)} ${sy - 1}, ${cx + s * shH} ${sy}`
+  );
 }
 
 export const tshirtTemplate: ClothingTemplate = {
   category: 'tshirt',
   buildSilhouette,
   overlays: [
-    {
-      id: 'chest',
-      fitKey: 'chest',
-      buildPath: buildChestOverlay,
-    },
-    {
-      id: 'sleeve_right',
-      fitKey: 'sleeve',
-      buildPath: (av, cl, cx) => buildSleeveOverlay(av, cl, cx, 'right'),
-    },
-    {
-      id: 'sleeve_left',
-      fitKey: 'sleeve',
-      buildPath: (av, cl, cx) => buildSleeveOverlay(av, cl, cx, 'left'),
-    },
+    { id: 'chest', fitKey: 'chest', buildPath: buildChestOverlay },
+    { id: 'sleeve_right', fitKey: 'sleeve', buildPath: (av, cl, cx) => buildSleeveOverlay(av, cl, cx, 'right') },
+    { id: 'sleeve_left', fitKey: 'sleeve', buildPath: (av, cl, cx) => buildSleeveOverlay(av, cl, cx, 'left') },
   ],
   buildSeams,
 };
