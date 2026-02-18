@@ -156,23 +156,8 @@ export default function AvatarSvg({ avatarDims: d, canvasWidth }: Props) {
     p += ` C ${legCX + s * thH * 1.0} ${d.crotchY + (d.kneeY - d.crotchY) * 0.3}, ${legCX + s * knH * 1.15} ${d.kneeY - (d.kneeY - d.crotchY) * 0.15}, ${legCX + s * knH} ${d.kneeY}`;
     p += ` C ${legCX + s * caH * 1.2} ${d.kneeY + (d.calfY - d.kneeY) * 0.4}, ${legCX + s * caH * 1.15} ${d.calfY - (d.calfY - d.kneeY) * 0.1}, ${legCX + s * caH} ${d.calfY}`;
     p += ` C ${legCX + s * caH * 0.7} ${d.calfY + (d.ankleY - d.calfY) * 0.4}, ${legCX + s * anH * 1.3} ${d.ankleY - (d.ankleY - d.calfY) * 0.2}, ${legCX + s * anH} ${d.ankleY}`;
-    // 발등: 발목에서 발끝 방향으로
+    // 발 — 원래 모양 유지
     p += ` Q ${legCX + s * anH * 0.8} ${d.ankleY + 6}, ${legCX + s * footLen} ${footEnd}`;
-    // 발가락 — 손가락과 비슷한 수준으로 표현
-    const toeStartX = legCX + s * footLen;
-    const toeStartY = footEnd;
-    const toeSpread = 8;
-    const toeLength = [4.5, 6.0, 5.5, 4.5, 3.5]; // 엄지~새끼
-    for (let t = 0; t < 5; t++) {
-      const ratio = t / 4;
-      const ty = toeStartY - toeSpread * 0.35 + ratio * toeSpread;
-      const tLen = toeLength[t];
-      const tipX = toeStartX + s * tLen;
-      // 발가락 끝으로 나갔다가 둥글게 돌아옴
-      p += ` Q ${tipX} ${ty - 1.2}, ${tipX} ${ty}`;
-      p += ` Q ${tipX} ${ty + 1.2}, ${toeStartX + s * tLen * 0.2} ${ty + 1.0}`;
-    }
-    // 발바닥으로 복귀
     p += ` Q ${legCX + s * footLen * 0.3} ${footEnd + 3}, ${legCX - s * anH * 0.2} ${footEnd - 2}`;
     p += ` Q ${legCX - s * anH * 0.6} ${d.ankleY + 4}, ${legCX - s * anH} ${d.ankleY}`;
     p += ` C ${legCX - s * anH * 1.2} ${d.ankleY - (d.ankleY - d.calfY) * 0.2}, ${legCX - s * caH * 0.55} ${d.calfY + (d.ankleY - d.calfY) * 0.4}, ${legCX - s * caH * 0.7} ${d.calfY}`;
@@ -181,6 +166,30 @@ export default function AvatarSvg({ avatarDims: d, canvasWidth }: Props) {
     p += ' Z';
     legPaths.push(p);
     kneeCenters.push({ cx: legCX + s * 1, cy: d.kneeY, rx: knH * 0.35, ry: d.legLength * 0.015, s });
+  }
+
+  // ── TOE PATHS (발가락 — 발 위에 별도 레이어) ──
+  const toePaths: string[] = [];
+  for (const s of [-1, 1]) {
+    const legCX = cx + s * hiH * 0.42;
+    const anH = d.ankleWidth / 2;
+    const footEnd = d.ankleY + 14;
+    const footLen = d.footLength;
+    const toeStartX = legCX + s * footLen;
+    const toeStartY = footEnd;
+    const toeSpread = 8;
+    const toeLength = [4.5, 6.0, 5.5, 4.5, 3.5];
+    for (let t = 0; t < 5; t++) {
+      const ratio = t / 4;
+      const ty = toeStartY - toeSpread * 0.35 + ratio * toeSpread;
+      const tLen = toeLength[t];
+      const tipX = toeStartX + s * tLen;
+      let tp = `M ${toeStartX + s * tLen * 0.1} ${ty - 1.0}`;
+      tp += ` Q ${tipX} ${ty - 1.2}, ${tipX} ${ty}`;
+      tp += ` Q ${tipX} ${ty + 1.2}, ${toeStartX + s * tLen * 0.1} ${ty + 1.0}`;
+      tp += ' Z';
+      toePaths.push(tp);
+    }
   }
 
   // ── NECK ──
@@ -240,6 +249,11 @@ export default function AvatarSvg({ avatarDims: d, canvasWidth }: Props) {
       ))}
       {kneeCenters.map((k, i) => (
         <ellipse key={`knee-${i}`} cx={k.cx} cy={k.cy} rx={k.rx} ry={k.ry} fill={shadow} stroke="none" />
+      ))}
+
+      {/* 6b. Toes */}
+      {toePaths.map((tp, i) => (
+        <path key={`toe-${i}`} d={tp} fill={fillColor} stroke={strokeColor} strokeWidth={0.5} strokeLinejoin="round" />
       ))}
 
       {/* 7. Neck */}
