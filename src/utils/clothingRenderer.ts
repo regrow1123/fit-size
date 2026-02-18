@@ -16,7 +16,7 @@ export function calculateClothingDimensions(
     shoulderWidth: toPx(measurements.get('shoulderWidth') ?? 45),
     chestWidth: toPx(measurements.get('chestWidth') ?? 50),
     totalLength: toPx(measurements.get('totalLength') ?? 70),
-    sleeveLength: toPx(measurements.get('sleeveLength') ?? 22),
+    sleeveLength: toPx(measurements.get('sleeveLength') ?? 25),
     sleeveWidth: toPx((measurements.get('sleeveCirc') ?? 36) / 2),
     hemWidth: toPx((measurements.get('hemCirc') ?? 100) / 2),
   };

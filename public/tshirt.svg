@@ -1,0 +1,82 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 700">
+  <defs>
+    <linearGradient id="bg" x1="0.3" y1="0" x2="0.7" y2="1">
+      <stop offset="0%" stop-color="#cad5e2"/>
+      <stop offset="50%" stop-color="#bec9d8"/>
+      <stop offset="100%" stop-color="#b2bdce"/>
+    </linearGradient>
+    <linearGradient id="sl" x1="0.5" y1="0" x2="0.5" y2="1">
+      <stop offset="0%" stop-color="#c0cbd8"/>
+      <stop offset="100%" stop-color="#a8b4c6"/>
+    </linearGradient>
+  </defs>
+
+  <!-- 왼쪽 소매: 팔 좌표에서 계산 -->
+  <path d="
+    M 107 139
+    C 103 148, 98 162, 94 178
+    L 91 207
+    Q 104 214, 116 214
+    C 122 208, 128 200, 134 192
+    L 142 191
+    C 142 176, 127 151, 107 139
+    Z
+  " fill="url(#sl)" stroke="#94a0b2" stroke-width="0.7" stroke-linejoin="round"/>
+
+  <!-- 오른쪽 소매: 대칭 -->
+  <path d="
+    M 293 139
+    C 297 148, 302 162, 306 178
+    L 309 207
+    Q 296 214, 284 214
+    C 278 208, 272 200, 266 192
+    L 258 191
+    C 258 176, 273 151, 293 139
+    Z
+  " fill="url(#sl)" stroke="#94a0b2" stroke-width="0.7" stroke-linejoin="round"/>
+
+  <!-- 몸통: 어깨 너비=78*2, 가슴=58*2, 밑단=55*2 -->
+  <path d="
+    M 178 139
+    L 107 139
+    C 117 148, 128 162, 135 175
+    C 140 185, 142 190, 142 191
+    C 142 200, 141 215, 140 235
+    C 139 260, 139 290, 139 320
+    C 139 345, 140 362, 141 374
+    Q 200 380, 259 374
+    C 260 362, 261 345, 261 320
+    C 261 290, 261 260, 260 235
+    C 259 215, 258 200, 258 191
+    C 258 190, 260 185, 265 175
+    C 272 162, 283 148, 293 139
+    L 222 139
+    C 217 141, 212 145, 207 149
+    Q 200 154, 193 149
+    C 188 145, 183 141, 178 139
+    Z
+  " fill="url(#bg)" stroke="#94a0b2" stroke-width="0.8" stroke-linejoin="round"/>
+
+  <!-- 넥라인 -->
+  <path d="
+    M 178 139
+    C 183 141, 188 145, 193 149
+    Q 200 154, 207 149
+    C 212 145, 217 141, 222 139
+  " fill="none" stroke="#8690a2" stroke-width="1.4" stroke-linecap="round"/>
+
+  <!-- 어깨 솔기 -->
+  <line x1="178" y1="139" x2="107" y2="139" stroke="#a4aebf" stroke-width="0.4" stroke-dasharray="3,2" opacity="0.5"/>
+  <line x1="222" y1="139" x2="293" y2="139" stroke="#a4aebf" stroke-width="0.4" stroke-dasharray="3,2" opacity="0.5"/>
+
+  <!-- 밑단 -->
+  <path d="M 141 374 Q 200 380, 259 374" fill="none" stroke="#8690a2" stroke-width="0.9" opacity="0.5"/>
+
+  <!-- 옆선 -->
+  <path d="M 142 191 C 141 215, 139 270, 139 320 C 139 350, 140 365, 141 374" fill="none" stroke="#a4aebf" stroke-width="0.3" opacity="0.3"/>
+  <path d="M 258 191 C 259 215, 261 270, 261 320 C 261 350, 260 365, 259 374" fill="none" stroke="#a4aebf" stroke-width="0.3" opacity="0.3"/>
+
+  <!-- 소매 끝단 접힘 표현 -->
+  <path d="M 93 205 Q 104 210, 115 212" fill="none" stroke="#9aa6b8" stroke-width="0.5" opacity="0.4"/>
+  <path d="M 307 205 Q 296 210, 285 212" fill="none" stroke="#9aa6b8" stroke-width="0.5" opacity="0.4"/>
+</svg>
